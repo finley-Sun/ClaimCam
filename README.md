@@ -13,11 +13,6 @@ Do not run this template directly. The generator will:
 
 UI is defined in `ui/welcome.uikitml`; the Vite UIKitML plugin compiles it to `public/ui/welcome.json` during build in generated variants.
 
-
-Here is the adapted README section:
-
----
-
 ## How to Run the Project
 
 ### 1. Start the Development Server
@@ -28,7 +23,7 @@ npm run dev
 
 Vite will output a local URL, typically:
 ```
-https://localhost:5173/
+https://localhost:8081/
 ```
 
 > If the server is already running in the background, skip this step.
@@ -37,7 +32,7 @@ https://localhost:5173/
 
 ### 2. Open in Browser
 
-Navigate to the URL provided in the terminal (e.g. `https://localhost:5173/`).
+Navigate to the URL provided in the terminal (e.g. `https://localhost:8081/`).
 
 > **Note:** Accept any certificate warnings — these are expected due to the local `mkcert` HTTPS setup.
 
