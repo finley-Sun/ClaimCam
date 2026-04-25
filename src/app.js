@@ -81,12 +81,14 @@ function bindGsViewer(gsViewer) {
             'https://huggingface.co/datasets/dylanebert/3dgs/resolve/main/bonsai/bonsai-7k.splat'
         );
         xrBtn.style.display = 'block';
+        xrBtn.disabled = false; 
     });
 
     gsViewer.onClose(() => {
         gsViewer.hide();
         seeReconBtn.style.display = 'flex';
         xrBtn.style.display = 'none';
+        xrBtn.disabled = false;
     });
 }
 

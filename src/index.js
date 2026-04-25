@@ -62,9 +62,9 @@ export async function initXR() {
 
     const world = await World.create(sceneContainer, {
         assets,
-        xr: {
-            sessionMode: SessionMode.ImmersiveVR,
-            offer: 'always',
+        xr: { 
+            sessionMode: SessionMode.ImmersiveVR, 
+            offer: 'never', 
             features: { handTracking: true, layers: true }
         },
         features: {

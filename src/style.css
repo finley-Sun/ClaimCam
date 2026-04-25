@@ -555,32 +555,118 @@ header {
     background: rgba(40, 40, 40, 0.9);
 }
 
-/* ── Splat Hints Overlay ── */
-.splat-hints {
+/* ── Splat Close Button ── */
+.splat-close-btn {
+ position: absolute;
+ top: 12px;
+ right: 12px;
+ z-index: 30;
+ background: rgba(10, 10, 10, 0.7);
+ border: 1px solid #333333;
+ border-radius: 6px;
+ color: #ffffff;
+ font-size: 0.85rem;
+ padding: 6px 10px;
+ cursor: pointer;
+ transition: background 0.2s ease;
+}
+
+.splat-close-btn:hover {
+ background: rgba(40, 40, 40, 0.9);
+}
+
+/* ── Info Button ── */
+.splat-info-btn {
+ position: absolute;
+ bottom: 16px;
+ right: 16px;
+ z-index: 30;
+ width: 28px;
+ height: 28px;
+ border-radius: 50%;
+ background: rgba(10, 10, 10, 0.7);
+ border: 1px solid #333333;
+ color: #ffffff;
+ font-size: 0.85rem;
+ font-style: italic;
+ font-weight: bold;
+ cursor: pointer;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ transition: background 0.2s ease;
+}
+
+.splat-info-btn:hover {
+ background: rgba(40, 40, 40, 0.9);
+}
+
+/* ── Info Panel ── */
+.splat-info-panel {
     position: absolute;
-    bottom: 16px;
+    bottom: 52px;
     right: 16px;
-    z-index: 20;
+    z-index: 30;
+    background: rgba(10, 10, 10, 0.85);
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    width: 300px;
+    overflow: hidden;
+    pointer-events: auto;
+}
+
+.splat-info-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid #222222;
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.splat-info-minimize {
+    background: transparent;
+    border: none;
+    color: #aaaaaa;
+    font-size: 1rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+    transition: color 0.2s ease;
+}
+
+.splat-info-minimize:hover {
+    color: #ffffff;
+}
+
+.splat-info-content {
+    padding: 10px 14px;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    background: rgba(10, 10, 10, 0.7);
-    border: 1px solid #2a2a2a;
-    border-radius: 8px;
-    padding: 10px 12px;
-    pointer-events: none;
+}
+
+.splat-info-section {
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: #555555;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 6px;
 }
 
 .splat-hint-row {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     color: #aaaaaa;
 }
 
 .splat-hint-row span {
-    color: #666666;
+    color: #666666; 
 }
 
 kbd {
@@ -595,4 +681,5 @@ kbd {
     font-family: monospace;
     color: #ffffff;
     min-width: 24px;
+    white-space: nowrap;
 }
