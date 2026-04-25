@@ -10,13 +10,14 @@
   },
   "dependencies": {
     "@iwsdk/core": "0.3.1",
+    "@mkkellogg/gaussian-splats-3d": "^0.4.7",
     "three": "npm:super-three@0.181.0"
   },
   "devDependencies": {
     "@felixtz/iwsdk-rag-mcp": "^0.3.1",
-    "@meta-quest/hzdb": "^1.0.0",
     "@iwsdk/vite-plugin-dev": "0.3.1",
     "@iwsdk/vite-plugin-uikitml": "0.3.1",
+    "@meta-quest/hzdb": "^1.0.0",
     "@types/three": "*",
     "vite": "^7.1.4",
     "vite-plugin-mkcert": "^1.17.0"

@@ -14,15 +14,12 @@ import {
     DistanceGrabbable,
     MovementMode,
     Interactable,
-    PanelUI,
-    PlaybackMode,
-    ScreenSpace
+    PlaybackMode
 } from '@iwsdk/core';
 
 import { EnvironmentType, LocomotionEnvironment } from '@iwsdk/core';
-
-import { PanelSystem } from './panel.js';
 import { Robot, RobotSystem } from './robot.js';
+import { GaussianSplatViewer } from './gaussianSplat.js';
 
 const assets = {
     chimeSound: {
@@ -52,8 +49,18 @@ const assets = {
     }
 };
 
-export function loadScene(onReady) {
-    World.create(document.getElementById('scene-container'), {
+let worldInstance = null;
+
+export async function initXR() {
+    if (worldInstance) {
+        worldInstance.launchXR();
+        return worldInstance;
+    }
+
+    const sceneContainer = document.getElementById('scene-container');
+    sceneContainer.style.display = 'block';
+
+    const world = await World.create(sceneContainer, {
         assets,
         xr: {
             sessionMode: SessionMode.ImmersiveVR,
@@ -67,70 +74,65 @@ export function loadScene(onReady) {
             sceneUnderstanding: false,
             environmentRaycast: false
         }
-    }).then((world) => {
-        const { camera } = world;
-        camera.position.set(-4, 1.5, -6);
-        camera.rotateY(-Math.PI * 0.75);
+    });
 
-        const { scene: envMesh } = AssetManager.getGLTF('environmentDesk');
-        envMesh.rotateY(Math.PI);
-        envMesh.position.set(0, -0.1, 0);
-        world
-            .createTransformEntity(envMesh)
-            .addComponent(LocomotionEnvironment, { type: EnvironmentType.STATIC });
+    worldInstance = world;
 
-        const { scene: plantMesh } = AssetManager.getGLTF('plantSansevieria');
-        plantMesh.position.set(1.2, 0.85, -1.8);
-        world
-            .createTransformEntity(plantMesh)
-            .addComponent(Interactable)
-            .addComponent(DistanceGrabbable, {
-                movementMode: MovementMode.MoveFromTarget
-            });
+    const { camera, scene, renderer } = world;
 
-        const { scene: robotMesh } = AssetManager.getGLTF('robot');
-        robotMesh.position.set(-1.2, 0.95, -1.8);
-        robotMesh.scale.setScalar(0.5);
-        world
-            .createTransformEntity(robotMesh)
-            .addComponent(Interactable)
-            .addComponent(Robot)
-            .addComponent(AudioSource, {
-                src: './audio/chime.mp3',
-                maxInstances: 3,
-                playbackMode: PlaybackMode.FadeRestart
-            });
+    camera.position.set(-4, 1.5, -6);
+    camera.rotateY(-Math.PI * 0.75);
 
-        const panelEntity = world
-            .createTransformEntity()
-            .addComponent(PanelUI, {
-                config: './ui/welcome.json',
-                maxHeight: 0.8,
-                maxWidth: 1.6
-            })
-            .addComponent(Interactable)
-            .addComponent(ScreenSpace, {
-                top: '20px',
-                left: '20px',
-                height: '40%'
-            });
-        panelEntity.object3D.position.set(0, 1.29, -1.9);
+    const { scene: envMesh } = AssetManager.getGLTF('environmentDesk');
+    envMesh.rotateY(Math.PI);
+    envMesh.position.set(0, -0.1, 0);
+    world
+        .createTransformEntity(envMesh)
+        .addComponent(LocomotionEnvironment, { type: EnvironmentType.STATIC });
 
-        const webxrLogoTexture = AssetManager.getTexture('webxr');
-        webxrLogoTexture.colorSpace = SRGBColorSpace;
-        const logoBanner = new Mesh(
-            new PlaneGeometry(3.39, 0.96),
-            new MeshBasicMaterial({
-                map: webxrLogoTexture,
-                transparent: true
-            })
-        );
-        world.createTransformEntity(logoBanner);
-        logoBanner.position.set(0, 1, 1.8);
-        logoBanner.rotateY(Math.PI);
+    const { scene: plantMesh } = AssetManager.getGLTF('plantSansevieria');
+    plantMesh.position.set(1.2, 0.85, -1.8);
+    world
+        .createTransformEntity(plantMesh)
+        .addComponent(Interactable)
+        .addComponent(DistanceGrabbable, {
+            movementMode: MovementMode.MoveFromTarget
+        });
 
-        world.registerSystem(PanelSystem).registerSystem(RobotSystem);
+    const { scene: robotMesh } = AssetManager.getGLTF('robot');
+    robotMesh.position.set(-1.2, 0.95, -1.8);
+    robotMesh.scale.setScalar(0.5);
+    world
+        .createTransformEntity(robotMesh)
+        .addComponent(Interactable)
+        .addComponent(Robot)
+        .addComponent(AudioSource, {
+            src: './audio/chime.mp3',
+            maxInstances: 3,
+            playbackMode: PlaybackMode.FadeRestart
+        });
 
-        if (typeof onReady === 'function') onReady(world);
+    const webxrLogoTexture = AssetManager.getTexture('webxr');
+    webxrLogoTexture.colorSpace = SRGBColorSpace;
+    const logoBanner = new Mesh(
+        new PlaneGeometry(3.39, 0.96),
+        new MeshBasicMaterial({
+            map: webxrLogoTexture,
+            transparent: true
+        })
+    );
+    world.createTransformEntity(logoBanner);
+    logoBanner.position.set(0, 1, 1.8);
+    logoBanner.rotateY(Math.PI);
+
+    world.registerSystem(RobotSystem);
+    world.launchXR();
+
+    return world;
+}
+
+export function initGaussian() {
+    return new GaussianSplatViewer({
+        container: document.getElementById('scene-wrapper')
     });
 }

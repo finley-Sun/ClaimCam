@@ -42,7 +42,6 @@
 
                     <!-- Side Menu -->
                     <div class="side-menu" id="side-menu">
-
                         <div class="side-menu-inner">
 
                             <!-- Weather Card -->
@@ -76,7 +75,6 @@
 
                             <!-- Scan List -->
                             <div class="scan-list" id="scan-list">
-
                                 <div class="scan-item" data-scan="living-room">
                                     <div class="scan-thumb">
                                         <svg viewBox="0 0 24 24" stroke-width="1.5">
@@ -113,7 +111,6 @@
                                         </div>
                                     </div>
                                 </div>
-
                             </div>
 
                             <!-- XR Button -->
@@ -125,7 +122,6 @@
                         <div class="side-menu-footer">
                             <button class="start-claim-btn" id="start-claim-btn">Start claim</button>
                         </div>
-
                     </div>
 
                     <!-- Scene Wrapper -->
@@ -134,6 +130,12 @@
                             <div class="loading-spinner"></div>
                             <span class="loading-label">Loading scan...</span>
                         </div>
+
+                        <!-- See Reconstruction button — shown after scan loads -->
+                        <button id="see-reconstruction-btn" style="display:none;">
+                            See Reconstruction
+                        </button>
+
                         <div id="scene-container"></div>
                     </div>
 
@@ -166,117 +168,7 @@
             </div>
         </div>
 
-        <script type="module">
-            import { loadScene } from '/src/index.js';
-            import { VisibilityState } from '@iwsdk/core';
-
-            let sceneLoaded = false;
-
-            // ── Navigation ──
-            const views = {
-                dashboard: document.getElementById('view-dashboard'),
-                bills: document.getElementById('view-bills'),
-                products: document.getElementById('view-products'),
-                claims: document.getElementById('view-claims'),
-            };
-
-            function navigateTo(page) {
-                Object.values(views).forEach(v => v.style.display = 'none');
-                views[page].style.display = 'flex';
-                document.querySelectorAll('[data-page]').forEach(a => {
-                    a.classList.toggle('active', a.dataset.page === page);
-                });
-                if (page === 'dashboard' && !sceneLoaded) {
-                    sceneLoaded = true;
-                    loadScene((world) => {
-                        bindXRButton(world);
-                    });
-                }
-            }
-
-            document.querySelectorAll('[data-page]').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    navigateTo(link.dataset.page);
-                });
-            });
-
-            navigateTo('dashboard');
-
-            // ── Segmented Picker ──
-            document.querySelectorAll('.segment-option').forEach(opt => {
-                opt.addEventListener('click', () => {
-                    document.querySelectorAll('.segment-option').forEach(o => o.classList.remove('active'));
-                    opt.classList.add('active');
-                });
-            });
-
-            // ── loadScan ──
-            const loadingOverlay = document.getElementById('loading-overlay');
-            const sceneContainer = document.getElementById('scene-container');
-
-            function loadScan(scanId) {
-                // Show loading overlay over the scene
-                loadingOverlay.classList.add('visible');
-                sceneContainer.style.opacity = '0';
-
-                setTimeout(() => {
-                    loadingOverlay.classList.remove('visible');
-                    sceneContainer.style.opacity = '1';
-                    // Scene is already loaded — nothing to reload
-                    console.log('loadScan complete for:', scanId);
-                }, 2000);
-            }
-
-            document.querySelectorAll('.scan-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    loadScan(item.dataset.scan);
-                });
-            });
-
-            // ── Start Claim ──
-            document.getElementById('start-claim-btn').addEventListener('click', () => {
-                console.log('Start claim clicked');
-            });
-
-            // ── XR Toggle ──
-            const xrBtn = document.getElementById('xr-toggle-btn');
-
-            function bindXRButton(world) {
-                xrBtn.disabled = false;
-
-                xrBtn.addEventListener('click', () => {
-                    if (world.visibilityState.value === VisibilityState.NonImmersive) {
-                        world.launchXR();
-                    } else {
-                        world.exitXR();
-                    }
-                });
-
-                world.visibilityState.subscribe((state) => {
-                    xrBtn.textContent = state === VisibilityState.NonImmersive
-                        ? 'Enter XR'
-                        : 'Exit to Browser';
-                });
-            }
-
-            // ── Profile Dropdown ──
-            const profileBtn = document.getElementById('profile-btn');
-            const profileDropdown = document.getElementById('profile-dropdown');
-
-            profileBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                profileDropdown.classList.toggle('open');
-            });
-
-            document.addEventListener('click', () => {
-                profileDropdown.classList.remove('open');
-            });
-
-            document.getElementById('logout-btn').addEventListener('click', () => {
-                console.log('Logout clicked');
-            });
-        </script>
+        <script type="module" src="/src/app.js"></script>
 
     </body>
 </html>
