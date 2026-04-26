@@ -1,58 +1,31 @@
 import {
     AssetType,
-    Mesh,
-    MeshBasicMaterial,
-    PlaneGeometry,
     SessionMode,
-    SRGBColorSpace,
     AssetManager,
-    World
-} from '@iwsdk/core';
-
-import {
-    AudioSource,
-    DistanceGrabbable,
-    MovementMode,
-    Interactable,
-    PlaybackMode
+    World,
+    Color
 } from '@iwsdk/core';
 
 import { EnvironmentType, LocomotionEnvironment } from '@iwsdk/core';
-import { Robot, RobotSystem } from './robot.js';
 import { GaussianSplatViewer } from './gaussianSplat.js';
+import { XRSplatLoader, createXRSplatSystem } from './xrSplatSystem.js';
 
 const assets = {
-    chimeSound: {
-        url: '/audio/chime.mp3',
-        type: AssetType.Audio,
-        priority: 'background'
-    },
-    webxr: {
-        url: '/textures/webxr.png',
-        type: AssetType.Texture,
-        priority: 'critical'
-    },
     environmentDesk: {
         url: './gltf/environmentDesk/environmentDesk.gltf',
         type: AssetType.GLTF,
         priority: 'critical'
     },
-    plantSansevieria: {
-        url: './gltf/plantSansevieria/plantSansevieria.gltf',
-        type: AssetType.GLTF,
-        priority: 'critical'
-    },
-    robot: {
-        url: './gltf/robot/robot.gltf',
-        type: AssetType.GLTF,
-        priority: 'critical'
-    }
 };
 
 let worldInstance = null;
+let xrSplatLoader = null;
 
-export async function initXR() {
+export async function initXR(splatUrl) {
     if (worldInstance) {
+        if (splatUrl && xrSplatLoader) {
+            await xrSplatLoader.load(splatUrl);
+        }
         worldInstance.launchXR();
         return worldInstance;
     }
@@ -62,14 +35,17 @@ export async function initXR() {
 
     const world = await World.create(sceneContainer, {
         assets,
-        xr: { 
-            sessionMode: SessionMode.ImmersiveVR, 
-            offer: 'never', 
+        xr: {
+            sessionMode: SessionMode.ImmersiveVR,
+            offer: 'never',
             features: { handTracking: true, layers: true }
         },
         features: {
-            locomotion: { useWorker: true },
-            grabbing: true,
+            locomotion: {
+                useWorker: true,
+                gravity: false,
+            },
+            grabbing: false,
             physics: false,
             sceneUnderstanding: false,
             environmentRaycast: false
@@ -80,52 +56,35 @@ export async function initXR() {
 
     const { camera, scene, renderer } = world;
 
-    camera.position.set(-4, 1.5, -6);
-    camera.rotateY(-Math.PI * 0.75);
+    // Strip default IWSDK environment
+    scene.background = new Color(0x000000);
+    scene.environment = null;
+    scene.fog = null;
 
+    renderer.autoClear = false;
+
+    camera.position.set(0, 1.6, 3);
+    camera.lookAt(0, 1.2, -2);
+
+    // Minimal floor for locomotion only
     const { scene: envMesh } = AssetManager.getGLTF('environmentDesk');
+    envMesh.visible = false;
     envMesh.rotateY(Math.PI);
     envMesh.position.set(0, -0.1, 0);
     world
         .createTransformEntity(envMesh)
         .addComponent(LocomotionEnvironment, { type: EnvironmentType.STATIC });
 
-    const { scene: plantMesh } = AssetManager.getGLTF('plantSansevieria');
-    plantMesh.position.set(1.2, 0.85, -1.8);
-    world
-        .createTransformEntity(plantMesh)
-        .addComponent(Interactable)
-        .addComponent(DistanceGrabbable, {
-            movementMode: MovementMode.MoveFromTarget
-        });
+    xrSplatLoader = new XRSplatLoader({ scene, camera, renderer });
 
-    const { scene: robotMesh } = AssetManager.getGLTF('robot');
-    robotMesh.position.set(-1.2, 0.95, -1.8);
-    robotMesh.scale.setScalar(0.5);
-    world
-        .createTransformEntity(robotMesh)
-        .addComponent(Interactable)
-        .addComponent(Robot)
-        .addComponent(AudioSource, {
-            src: './audio/chime.mp3',
-            maxInstances: 3,
-            playbackMode: PlaybackMode.FadeRestart
-        });
+    if (splatUrl) {
+        await xrSplatLoader.load(splatUrl);
+        console.log('[initXR] scene children after splat load:', scene.children.length);
+    }
 
-    const webxrLogoTexture = AssetManager.getTexture('webxr');
-    webxrLogoTexture.colorSpace = SRGBColorSpace;
-    const logoBanner = new Mesh(
-        new PlaneGeometry(3.39, 0.96),
-        new MeshBasicMaterial({
-            map: webxrLogoTexture,
-            transparent: true
-        })
-    );
-    world.createTransformEntity(logoBanner);
-    logoBanner.position.set(0, 1, 1.8);
-    logoBanner.rotateY(Math.PI);
+    const XRSplatSystem = createXRSplatSystem(xrSplatLoader);
+    world.registerSystem(XRSplatSystem);
 
-    world.registerSystem(RobotSystem);
     world.launchXR();
 
     return world;
@@ -133,6 +92,6 @@ export async function initXR() {
 
 export function initGaussian() {
     return new GaussianSplatViewer({
-    container: document.getElementById('view-dashboard')
+        container: document.getElementById('view-dashboard')
     });
 }

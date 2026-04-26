@@ -5,6 +5,7 @@ export class GaussianSplatViewer {
     constructor({ container }) {
         this.container = container;
         this.viewer = null;
+        this._xrActive = false;
 
         this.wrapper = document.createElement('div');
         this.wrapper.style.position = 'absolute';
@@ -20,13 +21,11 @@ export class GaussianSplatViewer {
         this.closeBtn.textContent = '✕';
         this.wrapper.appendChild(this.closeBtn);
 
-        // Info button (iconized)
         this.infoBtn = document.createElement('button');
         this.infoBtn.className = 'splat-info-btn';
         this.infoBtn.textContent = 'i';
         this.wrapper.appendChild(this.infoBtn);
 
-        // Info panel (hidden by default)
         this.infoPanel = document.createElement('div');
         this.infoPanel.className = 'splat-info-panel';
         this.infoPanel.style.display = 'none';
@@ -69,19 +68,17 @@ export class GaussianSplatViewer {
                 </div>
                 <div class="splat-hint-row">
                     <kbd>Ctrl</kbd><kbd>W</kbd>
-                    <span style="color:#e05555;">Closes the browser tab</span>
+                    <span style="color: var(--text-danger);">Closes the browser tab</span>
                 </div>
             </div>
         `;
         this.wrapper.appendChild(this.infoPanel);
 
-        // Toggle info panel
         this.infoBtn.addEventListener('click', () => {
             const isHidden = this.infoPanel.style.display === 'none';
             this.infoPanel.style.display = isHidden ? 'block' : 'none';
         });
 
-        // Minimize info panel
         this.infoPanel.querySelector('.splat-info-minimize').addEventListener('click', () => {
             this.infoPanel.style.display = 'none';
         });
@@ -127,7 +124,10 @@ export class GaussianSplatViewer {
     }
 
     show() {
+        this._xrActive = false;
         this.wrapper.style.display = 'block';
+        this.closeBtn.style.display = 'block';
+        this.infoBtn.style.display = 'flex';
         this._onResize();
     }
 
@@ -135,11 +135,22 @@ export class GaussianSplatViewer {
         this.wrapper.style.display = 'none';
     }
 
+    setXRActive(active) {
+        this._xrActive = active;
+        // Hide interactive buttons while XR is presenting
+        this.closeBtn.style.display = active ? 'none' : 'block';
+        this.infoBtn.style.display = active ? 'none' : 'flex';
+        if (active) {
+            this.infoPanel.style.display = 'none';
+        }
+    }
+
     onClose(callback) {
         this.closeBtn.addEventListener('click', callback);
     }
 
     _onResize() {
+        if (this._xrActive) return;
         if (this.viewer && this.viewer.renderer) {
             const width = this.container.clientWidth;
             const height = this.container.clientHeight;

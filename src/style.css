@@ -641,10 +641,15 @@ header {
 
 /* ── VR / XR Button ── */
 .cc-vr-btn {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
   display: none;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
+  padding: 12px 28px;
   background: var(--text-primary);
   color: var(--bg-primary);
   border-radius: 999px;
@@ -654,15 +659,18 @@ header {
   border: none;
   font-family: inherit;
   transition: opacity 0.15s ease;
+  pointer-events: auto;
+  white-space: nowrap;
 }
 
 .cc-vr-btn:hover {
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
 .cc-vr-btn svg {
   width: 14px;
   height: 14px;
+  flex-shrink: 0;
 }
 
 .cc-vr-btn:disabled {
@@ -675,6 +683,15 @@ header {
   position: absolute;
   inset: 0;
   display: none;
+}
+
+/* ── Hide IWSDK built-in XR button ── */
+#scene-container button,
+#scene-container [class*="XR"],
+#scene-container [class*="xr"],
+#scene-container [class*="vr"],
+#scene-container [class*="VR"] {
+  display: none !important;
 }
 
 /* ── Loading Overlay ── */
