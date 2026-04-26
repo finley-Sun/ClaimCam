@@ -133,6 +133,6 @@ export async function initXR() {
 
 export function initGaussian() {
     return new GaussianSplatViewer({
-        container: document.getElementById('scene-wrapper')
+    container: document.getElementById('view-dashboard')
     });
 }
