@@ -1106,64 +1106,135 @@ kbd {
 .cf-gen-idle,
 .cf-gen-loading,
 .cf-gen-done {
- display: flex;
- flex-direction: column;
- align-items: center;
- gap: 10px;
- padding: 24px 0;
- text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 24px 0;
+    text-align: center;
 }
 
 .cf-gen-label {
- font-size: 14px;
- font-weight: 500;
- color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
 }
 
 .cf-gen-sub {
- font-size: 12px;
- color: var(--text-tertiary);
+    font-size: 12px;
+    color: var(--text-tertiary);
 }
 
 .cf-gen-spinner {
- width: 32px;
- height: 32px;
- border: 2px solid var(--border-secondary);
- border-top-color: var(--text-primary);
- border-radius: 50%;
- animation: spin 0.8s linear infinite;
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--border-secondary);
+    border-top-color: var(--text-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
 }
 
 /* ── Buttons ── */
 .cf-btn-primary {
- padding: 10px 20px;
- background: var(--text-primary);
- color: var(--bg-primary);
- border: none;
- border-radius: 999px;
- font-size: 13px;
- font-weight: 500;
- cursor: pointer;
- font-family: inherit;
- transition: opacity 0.15s ease;
+    padding: 10px 20px;
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    border: none;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s ease;
 }
 
 .cf-btn-primary:hover {
- opacity: 0.85;
+    opacity: 0.85;
 }
 
 .cf-btn-secondary {
- padding: 10px 20px;
- background: transparent;
- color: var(--text-secondary);
- border: 0.5px solid var(--border-secondary);
- border-radius: 999px;
- font-size: 13px;
- cursor: pointer;
- font-family: inherit;
- transition: background 0.15s ease;
+    padding: 10px 20px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 0.5px solid var(--border-secondary);
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s ease;
 }
 
 .cf-btn-secondary:hover {
- background: var(--bg-secondary);
+    background: var(--bg-secondary);
+}
+
+/* ── Policy Grid ── */
+.cf-policy-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.cf-policy-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    background: var(--policy-bg, var(--bg-secondary));
+    border: 1px solid var(--policy-border, var(--border-tertiary));
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+}
+
+.cf-policy-item.active {
+    border-width: 1.5px;
+    border-color: var(--text-primary);
+}
+
+.cf-policy-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.cf-policy-label {
+    font-size: 13px;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.cf-policy-check {
+    font-size: 12px;
+    color: var(--text-primary);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.cf-policy-item.active .cf-policy-check {
+    opacity: 1;
+}
+
+/* ── Danger Zone ── */
+.cf-danger-zone {
+    margin-top: 8px;
+    padding-top: 16px;
+    border-top: 0.5px solid var(--border-tertiary);
+}
+
+.cf-btn-danger {
+    width: 100%;
+    padding: 10px;
+    background: var(--bg-danger);
+    color: var(--text-danger);
+    border: 0.5px solid #f5c2c2;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s ease;
+}
+
+.cf-btn-danger:hover {
+    background: #f5d0d0;
 }

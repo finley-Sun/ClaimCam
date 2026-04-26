@@ -1,4 +1,4 @@
-import { InsuredObject, ObjectType } from './insuredObject.js';
+import { InsuredObject, ObjectType, PolicyType } from './insuredObject.js';
 
 export const mockObjects = [
     new InsuredObject({
@@ -6,6 +6,7 @@ export const mockObjects = [
         title: 'Bonsai',
         image: null,
         type: ObjectType.HOUSEHOLD,
+        policies: [PolicyType.FIRE, PolicyType.WATER],
         splatURL: 'https://huggingface.co/datasets/dylanebert/3dgs/resolve/main/bonsai/bonsai-7k.splat',
         creationTime: new Date('2025-04-10'),
         media: [],
@@ -15,6 +16,7 @@ export const mockObjects = [
         title: 'Living Room',
         image: null,
         type: ObjectType.BUILDING,
+        policies: [PolicyType.FIRE, PolicyType.WATER, PolicyType.NATURAL_DISASTER],
         splatURL: null,
         creationTime: new Date('2025-03-22'),
         media: [],
@@ -24,6 +26,7 @@ export const mockObjects = [
         title: 'Kitchen',
         image: null,
         type: ObjectType.BUILDING,
+        policies: [PolicyType.ELECTRICAL, PolicyType.FIRE],
         splatURL: null,
         creationTime: new Date('2025-04-01'),
         media: [],
@@ -33,6 +36,7 @@ export const mockObjects = [
         title: 'Television',
         image: null,
         type: ObjectType.HOUSEHOLD,
+        policies: [PolicyType.THEFT, PolicyType.VANDALISM],
         splatURL: null,
         creationTime: new Date('2025-02-14'),
         media: [],
