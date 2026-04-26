@@ -241,13 +241,25 @@ header {
 
 /* ── Side Menu ── */
 .side-menu {
-    width: 320px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    flex-shrink: 0;
-    overflow: hidden;
-    min-height: 0;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+  overflow: hidden;
+  min-height: 0;
+  height: 100%;
+}
+
+#pane-dashboard {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.help-card {
+  margin-top: auto;
 }
 
 .side-menu::-webkit-scrollbar {

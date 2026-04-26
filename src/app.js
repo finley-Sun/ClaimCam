@@ -38,7 +38,7 @@ function navigateTo(page) {
 
   sideMenu.style.display = page === 'dashboard' ? 'flex' : 'none';
 
-  sidePanes[page].style.display = 'block';
+  sidePanes[page].style.display = '';
   mainViews[page].style.display = 'flex';
 
   document.querySelectorAll('[data-page]').forEach(a => {
