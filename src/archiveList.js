@@ -1,4 +1,4 @@
-import { ObjectType, ClaimStatus, ClaimStatusMeta } from './insuredObject.js';
+import { ObjectType, ClaimStatus, ClaimStatusMeta, PolicyMeta } from './insuredObject.js';
 
 export class ArchiveList {
 
@@ -62,64 +62,78 @@ export class ArchiveList {
         this.listEl.innerHTML = '';
 
         if (items.length === 0) {
-            this.listEl.innerHTML = `
-                <div style="
-                    padding: 24px 8px;
-                    text-align: center;
-                    font-size: 12px;
-                    color: var(--text-tertiary);
-                ">
-                    No items found
-                </div>
-            `;
-            return;
+        this.listEl.innerHTML = `
+        <div style="
+        padding: 24px 8px;
+        text-align: center;
+        font-size: 12px;
+        color: var(--text-tertiary);
+        ">
+        No items found
+        </div>
+        `;
+        return;
         }
 
         items.forEach(obj => {
-            const claim = this._latestClaim(obj);
-            const statusMeta = claim ? ClaimStatusMeta[claim.status] : null;
+        const el = document.createElement('div');
+        el.className = 'cc-item' + (obj.id === this.selectedId ? ' selected' : '');
+        el.dataset.id = obj.id;
 
-            const el = document.createElement('div');
-            el.className = 'cc-item' + (obj.id === this.selectedId ? ' selected' : '');
-            el.dataset.id = obj.id;
+        const hasClaims = obj.claims && obj.claims.length > 0;
 
-            el.innerHTML = `
-                <div class="cc-thumb">
-                    ${obj.image
-                        ? `<img src="${obj.image}" alt="${obj.title}" />`
-                        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="3" y="3" width="18" height="18" rx="2"/>
-                            <path d="M3 9h18"/>
-                        </svg>`
-                    }
-                </div>
-                <div class="cc-item-body">
-                    <div class="cc-item-name">${obj.title}</div>
-                    ${statusMeta ? `
-                        <div class="cc-chip cc-chip-claim" style="
-                            background: ${statusMeta.color};
-                            border-color: ${statusMeta.border};
-                            color: ${statusMeta.text};
-                        ">
-                            <span class="dot" style="background: ${statusMeta.text};"></span>
-                            ${statusMeta.label}
-                        </div>
-                    ` : `
-                        <div class="cc-chip">
-                            <span class="dot"></span>
-                            ${obj.formattedDate}
-                        </div>
-                    `}
-                </div>
-            `;
+        // Build chips — one per claim, or default date chip
+        let chipsHtml = '';
+        if (hasClaims) {
+        chipsHtml = obj.claims
+        .slice()
+        .sort((a, b) => new Date(b.creationTime) - new Date(a.creationTime))
+        .map(claim => {
+        const statusMeta = ClaimStatusMeta[claim.status];
+        const policyMeta = PolicyMeta[claim.policyType];
+        return `
+        <div class="cc-chip cc-chip-claim" style="
+        background: ${statusMeta.color};
+        border-color: ${statusMeta.border};
+        color: ${statusMeta.text};
+        ">
+        <span class="dot" style="background: ${statusMeta.text};"></span>
+        ${policyMeta.icon} ${statusMeta.label}
+        </div>
+        `;
+        }).join('');
+        } else {
+        chipsHtml = `
+        <div class="cc-chip">
+        <span class="dot"></span>
+        ${obj.formattedDate}
+        </div>
+        `;
+        }
 
-            el.addEventListener('click', () => {
-                this.selectedId = obj.id;
-                this.render();
-                this.onSelect(obj);
-            });
+        el.innerHTML = `
+        <div class="cc-thumb">
+        ${obj.image
+        ? `<img src="${obj.image}" alt="${obj.title}" />`
+        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <path d="M3 9h18"/>
+        </svg>`
+        }
+        </div>
+        <div class="cc-item-body">
+        <div class="cc-item-name">${obj.title}</div>
+        <div class="cc-item-chips">${chipsHtml}</div>
+        </div>
+        `;
 
-            this.listEl.appendChild(el);
+        el.addEventListener('click', () => {
+        this.selectedId = obj.id;
+        this.render();
+        this.onSelect(obj);
+        });
+
+        this.listEl.appendChild(el);
         });
     }
 }

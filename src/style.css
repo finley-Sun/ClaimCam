@@ -1499,3 +1499,133 @@ kbd {
 .cc-chip-claim {
     font-weight: 500;
 }
+
+/* ── Multi-chip row ── */
+.cc-item-chips {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 4px;
+ margin-top: 2px;
+}
+
+/* ── Claims list inside info card ── */
+.stage-info-claims {
+ display: flex;
+ flex-direction: column;
+ gap: 6px;
+ padding-top: 10px;
+ border-top: 0.5px solid var(--border-tertiary);
+}
+
+.stage-info-claim-header {
+ font-size: 10px;
+ font-weight: 600;
+ color: var(--text-tertiary);
+ text-transform: uppercase;
+ letter-spacing: 0.06em;
+}
+
+.stage-info-claims-list {
+ display: flex;
+ flex-direction: column;
+ gap: 6px;
+ max-height: 140px;
+ overflow-y: auto;
+}
+
+.stage-info-claims-list::-webkit-scrollbar {
+ width: 3px;
+}
+
+.stage-info-claims-list::-webkit-scrollbar-thumb {
+ background: var(--border-secondary);
+ border-radius: 2px;
+}
+
+.stage-info-claim-item {
+ display: flex;
+ flex-direction: column;
+ gap: 2px;
+ padding: 8px 10px;
+ background: var(--bg-secondary);
+ border-radius: var(--radius-md);
+ border: 0.5px solid var(--border-tertiary);
+}
+
+.stage-info-claim-row {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: 8px;
+}
+
+.stage-info-claim-type {
+ font-size: 12px;
+ color: var(--text-primary);
+ font-weight: 500;
+}
+
+.stage-info-claim-status {
+ display: inline-flex;
+ align-items: center;
+ padding: 2px 8px;
+ border-radius: 999px;
+ font-size: 11px;
+ font-weight: 500;
+ border: 0.5px solid;
+}
+
+.stage-info-claim-date {
+ font-size: 11px;
+ color: var(--text-tertiary);
+}
+
+/* ── Stage Info Card — full ruleset ── */
+.stage-info-card {
+ position: absolute;
+ bottom: 24px;
+ left: 24px;
+ z-index: 20;
+ background: rgba(255, 255, 255, 0.92);
+ border: 0.5px solid var(--border-secondary);
+ border-radius: var(--radius-lg);
+ padding: 14px 16px;
+ width: 240px;
+ display: flex;
+ flex-direction: column;
+ gap: 10px;
+ backdrop-filter: blur(8px);
+ box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+ pointer-events: none;
+}
+
+.stage-info-title {
+ font-size: 14px;
+ font-weight: 600;
+ color: var(--text-primary);
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+}
+
+.stage-info-meta {
+ font-size: 11px;
+ color: var(--text-tertiary);
+ margin-top: -4px;
+}
+
+.stage-info-policies {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 4px;
+}
+
+.stage-info-policy-chip {
+ display: inline-flex;
+ align-items: center;
+ gap: 4px;
+ padding: 2px 8px;
+ border-radius: 999px;
+ font-size: 11px;
+ border: 0.5px solid;
+}

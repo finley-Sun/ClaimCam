@@ -141,48 +141,58 @@
         <!-- Dashboard stage -->
         <div class="cc-stage" id="view-dashboard">
 
-          <!-- Empty state -->
-          <div class="stage-empty" id="stage-empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-            <span>Select an insured object to view its reconstruction</span>
-          </div>
+            <!-- Empty state -->
+            <div class="stage-empty" id="stage-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <span>Select an insured object to view its reconstruction</span>
+            </div>
 
-          <!-- See Reconstruction Button -->
-          <button id="see-reconstruction-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-            View reconstruction
-          </button>
+            <!-- See Reconstruction Button -->
+            <button id="see-reconstruction-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                View reconstruction
+            </button>
 
-          <!-- Stage top bar -->
-          <!-- Stage top bar — close button only -->
-          <div class="stage-topbar">
-            <div></div>
-          </div>
+            <!-- Stage top bar -->
+            <div class="stage-topbar">
+                <div></div>
+            </div>
 
-          <!-- XR Button — bottom center -->
-          <button class="cc-vr-btn" id="xr-toggle-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="2" y="7" width="20" height="11" rx="3"/>
-              <circle cx="8" cy="13" r="1.5"/>
-              <circle cx="16" cy="13" r="1.5"/>
-            </svg>
-            Enter XR
-          </button>
+            <!-- XR Button — bottom center -->
+            <button class="cc-vr-btn" id="xr-toggle-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="7" width="20" height="11" rx="3"/>
+                    <circle cx="8" cy="13" r="1.5"/>
+                    <circle cx="16" cy="13" r="1.5"/>
+                </svg>
+                Enter XR
+            </button>
 
-          <!-- Loading overlay -->
-          <div id="loading-overlay">
-            <div class="loading-spinner"></div>
-            <span class="loading-label">Loading reconstruction...</span>
-          </div>
+            <!-- Object Info Card — bottom left -->
+            <div class="stage-info-card" id="stage-info-card" style="display: none;">
+                <div class="stage-info-title" id="stage-info-title"></div>
+                <div class="stage-info-meta" id="stage-info-meta"></div>
+                <div class="stage-info-policies" id="stage-info-policies"></div>
+                <div class="stage-info-claims" id="stage-info-claims" style="display: none;">
+                    <div class="stage-info-claim-header">Claims</div>
+                    <div class="stage-info-claims-list" id="stage-info-claims-list"></div>
+                </div>
+            </div>
 
-          <!-- Scene container (IWSDK) -->
-          <div id="scene-container"></div>
+            <!-- Loading overlay -->
+            <div id="loading-overlay">
+                <div class="loading-spinner"></div>
+                <span class="loading-label">Loading reconstruction...</span>
+            </div>
+
+            <!-- Scene container (IWSDK) -->
+            <div id="scene-container"></div>
 
         </div>
 

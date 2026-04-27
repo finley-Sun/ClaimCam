@@ -4,6 +4,7 @@ import { ArchiveList } from './archiveList.js';
 import { mockObjects } from './mockData.js';
 import { CreationFlow } from './Flows/creationFlow.js';
 import { ClaimFlow } from './Flows/claimFlow.js';
+import { PolicyMeta, ClaimStatusMeta } from './insuredObject.js';
 
 let sceneLoaded = false;
 let gsViewer = null;
@@ -132,6 +133,8 @@ function initArchive() {
     }
 }
 
+
+
 // ── loadScan ──
 function loadScan(obj) {
     seeReconBtn.style.display = 'none';
@@ -144,6 +147,8 @@ function loadScan(obj) {
 
     seeReconBtn.style.display = 'flex';
     seeReconBtn.dataset.splatUrl = obj.splatURL || '';
+
+    updateInfoCard(obj);
 
     console.log('Scan selected:', obj.id);
 }
@@ -236,4 +241,71 @@ document.getElementById('logout-btn').addEventListener('click', () => {
     console.log('Logout clicked');
 });
 
+// ── Stage Info Card ──
+function updateInfoCard(obj) {
+    const card = document.getElementById('stage-info-card');
+    const titleEl = document.getElementById('stage-info-title');
+    const metaEl = document.getElementById('stage-info-meta');
+    const policiesEl = document.getElementById('stage-info-policies');
+    const claimsEl = document.getElementById('stage-info-claims');
+    const claimsListEl = document.getElementById('stage-info-claims-list');
+
+    if (!obj) {
+        card.style.display = 'none';
+        return;
+    }
+
+    titleEl.textContent = obj.title;
+    metaEl.textContent = `${obj.type === 'building' ? 'Building' : 'Household'} · insured ${obj.formattedDate}`;
+
+    policiesEl.innerHTML = obj.policies.map(key => {
+    const meta = PolicyMeta[key];
+    return `
+    <span class="stage-info-policy-chip" style="
+    background: ${meta.color};
+    border-color: ${meta.border};
+    color: var(--text-secondary);
+    ">
+    ${meta.icon} ${meta.label}
+    </span>
+    `;
+    }).join('');
+
+    if (obj.claims && obj.claims.length > 0) {
+    // Sort by most recent first
+    const sorted = [...obj.claims].sort((a, b) =>
+    new Date(b.creationTime) - new Date(a.creationTime)
+    );
+
+    claimsListEl.innerHTML = sorted.map(claim => {
+    const policyMeta = PolicyMeta[claim.policyType];
+    const statusMeta = ClaimStatusMeta[claim.status];
+    return `
+    <div class="stage-info-claim-item">
+    <div class="stage-info-claim-row">
+    <span class="stage-info-claim-type">
+    ${policyMeta.icon} ${policyMeta.label}
+    </span>
+    <span class="stage-info-claim-status" style="
+    background: ${statusMeta.color};
+    border-color: ${statusMeta.border};
+    color: ${statusMeta.text};
+    ">
+    ${statusMeta.label}
+    </span>
+    </div>
+    <div class="stage-info-claim-date">${claim.formattedDate}</div>
+    </div>
+    `;
+    }).join('');
+
+    claimsEl.style.display = 'flex';
+    } else {
+    claimsEl.style.display = 'none';
+    }
+
+    card.style.display = 'flex';
+}
+
 export { loadScan };
+
