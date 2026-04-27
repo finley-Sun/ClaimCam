@@ -20,6 +20,15 @@ const stageEmpty = document.getElementById('stage-empty');
 xrBtn.style.display = 'none';
 sceneContainer.style.display = 'none';
 
+
+// ── Disclaimer ──
+const disclaimerOverlay = document.getElementById('disclaimer-overlay');
+const disclaimerBtn = document.getElementById('disclaimer-btn');
+
+disclaimerBtn.addEventListener('click', () => {
+    disclaimerOverlay.style.display = 'none';
+});
+
 // ── Navigation maps ──
 const sidePanes = {
     dashboard: document.getElementById('pane-dashboard'),
@@ -160,7 +169,7 @@ xrBtn.addEventListener('click', async () => {
 
     if (gsViewer) {
         gsViewer.setXRActive(true);
-        gsViewer.hide();
+        gsViewer.destroyForXR();
     }
 
     const world = await initXR(currentSplatUrl);

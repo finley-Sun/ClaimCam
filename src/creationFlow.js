@@ -206,28 +206,42 @@ export class CreationFlow {
 
   _renderStep3() {
     this.modal.innerHTML = `
-      <div class="cf-header">
-        <div class="cf-step-label">Step 3 of 4</div>
-        <div class="cf-title">Add media</div>
-        <button class="cf-close" id="cf-close">✕</button>
-      </div>
-      <div class="cf-body">
-        <div class="cf-upload-zone" id="cf-upload-zone">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
-          </svg>
-          <span>Click to upload or drag &amp; drop</span>
-          <span class="cf-upload-sub">Images and videos supported</span>
-          <input type="file" id="cf-file-input" multiple accept="image/*,video/*" style="display:none;" />
+        <div class="cf-header">
+            <div class="cf-step-label">Step 3 of 4</div>
+            <div class="cf-title">Add media</div>
+            <button class="cf-close" id="cf-close">✕</button>
         </div>
-        <div class="cf-media-grid" id="cf-media-grid"></div>
-      </div>
-      <div class="cf-footer">
-        <button class="cf-btn-secondary" id="cf-back3">Back</button>
-        <button class="cf-btn-primary" id="cf-next3">Continue</button>
-      </div>
+        <div class="cf-body">
+            <div class="cf-upload-zone" id="cf-upload-zone">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span>Click to upload or drag &amp; drop</span>
+                <span class="cf-upload-sub">Images and videos supported</span>
+                <input type="file" id="cf-file-input" multiple accept="image/*,video/*" style="display:none;" />
+            </div>
+
+            <div class="cf-media-requirement">
+                <div class="cf-media-req-text">
+                    <span id="cf-media-score-label">0 / 15 points</span>
+                    <span class="cf-media-req-hint">Images = 1 pt each &nbsp;·&nbsp; Videos = 5 pts each</span>
+                </div>
+                <div class="cf-media-progress-track">
+                    <div class="cf-media-progress-fill" id="cf-media-progress-fill"></div>
+                </div>
+                <div class="cf-media-req-sub" id="cf-media-req-sub">
+                    Upload at least 15 images, or fewer videos to reach 15 points
+                </div>
+            </div>
+
+            <div class="cf-media-grid" id="cf-media-grid"></div>
+        </div>
+        <div class="cf-footer">
+            <button class="cf-btn-secondary" id="cf-back3">Back</button>
+            <button class="cf-btn-primary" id="cf-next3" disabled>Continue</button>
+        </div>
     `;
 
     this.modal.querySelector('#cf-close').addEventListener('click', () => this.close());
@@ -238,66 +252,118 @@ export class CreationFlow {
     uploadZone.addEventListener('click', () => fileInput.click());
 
     uploadZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadZone.classList.add('drag-over');
+        e.preventDefault();
+        uploadZone.classList.add('drag-over');
     });
 
     uploadZone.addEventListener('dragleave', () => {
-      uploadZone.classList.remove('drag-over');
+        uploadZone.classList.remove('drag-over');
     });
 
     uploadZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadZone.classList.remove('drag-over');
-      this._addFiles(Array.from(e.dataTransfer.files));
+        e.preventDefault();
+        uploadZone.classList.remove('drag-over');
+        this._addFiles(Array.from(e.dataTransfer.files));
     });
 
     fileInput.addEventListener('change', () => {
-      this._addFiles(Array.from(fileInput.files));
+        this._addFiles(Array.from(fileInput.files));
     });
 
     this.modal.querySelector('#cf-back3').addEventListener('click', () => this._goToStep(2));
-    this.modal.querySelector('#cf-next3').addEventListener('click', () => this._goToStep(4));
+    this.modal.querySelector('#cf-next3').addEventListener('click', () => {
+        if (this._mediaScore() >= 15) this._goToStep(4);
+    });
 
-    this._renderMediaGrid();
-  }
+    requestAnimationFrame(() => this._renderMediaGrid());
+}
+
+_mediaScore() {
+    return this.draft.media.reduce((sum, item) => {
+        return sum + (item.type === 'video' ? 5 : 1);
+    }, 0);
+}
 
   _addFiles(files) {
-    files.forEach(file => {
-      const url = URL.createObjectURL(file);
-      this.draft.media.push({
-        file,
-        url,
-        type: file.type.startsWith('video') ? 'video' : 'image'
+      files.forEach(file => {
+          const url = URL.createObjectURL(file);
+          this.draft.media.push({
+              file,
+              url,
+              type: file.type.startsWith('video') ? 'video' : 'image'
+          });
       });
-    });
-    this._renderMediaGrid();
+      this._renderMediaGrid();
   }
 
   _renderMediaGrid() {
-    const grid = this.modal.querySelector('#cf-media-grid');
-    if (!grid) return;
-    grid.innerHTML = '';
+      const grid = this.modal.querySelector('#cf-media-grid');
+      const scoreLabel = this.modal.querySelector('#cf-media-score-label');
+      const progressFill = this.modal.querySelector('#cf-media-progress-fill');
+      const reqSub = this.modal.querySelector('#cf-media-req-sub');
+      const nextBtn = this.modal.querySelector('#cf-next3');
 
-    this.draft.media.forEach((item, i) => {
-      const el = document.createElement('div');
-      el.className = 'cf-media-thumb';
-      el.innerHTML = item.type === 'video'
-        ? `<video src="${item.url}" class="cf-media-preview"></video>
-            <span class="cf-media-badge">Video</span>`
-        : `<img src="${item.url}" class="cf-media-preview" />`;
+      if (!grid) return;
 
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'cf-media-remove';
-      removeBtn.textContent = '✕';
-      removeBtn.addEventListener('click', () => {
-        this.draft.media.splice(i, 1);
-        this._renderMediaGrid();
+      const score = this._mediaScore();
+      const satisfied = score >= 15;
+      const pct = Math.min((score / 15) * 100, 100);
+
+      if (scoreLabel) {
+          scoreLabel.textContent = `${score} / 15 points`;
+      }
+
+      if (progressFill) {
+          progressFill.style.width = `${pct}%`;
+          progressFill.style.background = satisfied
+              ? '#3a7d44'
+              : score > 0 ? '#c8860a' : 'var(--border-secondary)';
+      }
+
+      if (reqSub) {
+          if (satisfied) {
+              reqSub.textContent = 'Requirement met — you can continue';
+              reqSub.style.color = '#3a7d44';
+          } else {
+              const remaining = 15 - score;
+              const videosNeeded = Math.ceil(remaining / 5);
+              reqSub.textContent = `${remaining} more point${remaining !== 1 ? 's' : ''} needed — add ${remaining} image${remaining !== 1 ? 's' : ''} or ${videosNeeded} video${videosNeeded !== 1 ? 's' : ''}`;
+              reqSub.style.color = score > 0 ? 'var(--text-warning)' : 'var(--text-tertiary)';
+          }
+      }
+
+      if (nextBtn) {
+          if (satisfied) {
+              nextBtn.removeAttribute('disabled');
+          } else {
+              nextBtn.setAttribute('disabled', 'true');
+          }
+          nextBtn.style.opacity = satisfied ? '1' : '0.4';
+          nextBtn.style.cursor = satisfied ? 'pointer' : 'not-allowed';
+      }
+
+      grid.innerHTML = '';
+
+      this.draft.media.forEach((item, i) => {
+          const el = document.createElement('div');
+          el.className = 'cf-media-thumb';
+          el.innerHTML = item.type === 'video'
+              ? `<video src="${item.url}" class="cf-media-preview"></video>
+                <span class="cf-media-badge">Video · 5pts</span>`
+              : `<img src="${item.url}" class="cf-media-preview" />
+                <span class="cf-media-badge cf-media-badge-img">1pt</span>`;
+
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'cf-media-remove';
+          removeBtn.textContent = '✕';
+          removeBtn.addEventListener('click', () => {
+              this.draft.media.splice(i, 1);
+              this._renderMediaGrid();
+          });
+
+          el.appendChild(removeBtn);
+          grid.appendChild(el);
       });
-
-      el.appendChild(removeBtn);
-      grid.appendChild(el);
-    });
   }
 
   // ── Step 4: Splat generation (mocked) ───────────────────────────

@@ -184,4 +184,11 @@ export class GaussianSplatViewer {
         this._resizeObserver.disconnect();
         this.wrapper.remove();
     }
+    
+    // Call this before initXR to free the WebGL context
+    destroyForXR() {
+        this._xrActive = true;
+        this._destroyViewer();
+        this.wrapper.style.display = 'none';
+    }
 }

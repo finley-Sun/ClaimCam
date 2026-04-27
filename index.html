@@ -194,6 +194,38 @@
       </div>
     </div>
 
+    <!-- Disclaimer Modal -->
+    <div class="disclaimer-overlay" id="disclaimer-overlay">
+      <div class="disclaimer-modal">
+        <div class="disclaimer-header">
+        <div class="disclaimer-tag">Proof of Concept</div>
+        <div class="disclaimer-title">ClaimCam</div>
+        </div>
+        <div class="disclaimer-body">
+          <p>
+            This application is a <strong>proof of concept</strong> built for the <strong>XRCC2026</strong>.
+            The data visible throughout the interface like insured objects, claims, policies,
+            weather and reconstructions are <strong>mocked</strong> due to the pricing
+            and time constraints involved in integrating real APIs at this stage.
+          </p>
+          <p>
+            The underlying technology is <strong>real and functional</strong>:
+            Gaussian Splatting reconstruction, WebXR immersive rendering and the full
+            insurance management flow all work end-to-end. However, the external APIs
+            required to generate live data are either too slow or too costly to run
+            reliably during a hackathon demo, so we chose to represent the final
+            product vision through realistic mock data instead.
+          </p>
+          <p>
+            What you are seeing is the <strong>intended final experience</strong> of ClaimCam.
+          </p>
+        </div>
+        <div class="disclaimer-footer">
+          <button class="disclaimer-btn" id="disclaimer-btn">I understand, continue</button>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="/src/app.js"></script>
 
   </body>
