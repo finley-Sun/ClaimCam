@@ -21,8 +21,42 @@ export const PolicyMeta = {
     [PolicyType.ELECTRICAL]: { label: 'Electrical', icon: '⚡', color: '#fafae8', border: '#e0e0a0' },
 };
 
+export const ClaimStatus = {
+    PENDING: 'pending',
+    PROCESSING: 'processing',
+    APPROVED: 'approved',
+    REJECTED: 'rejected',
+};
+
+export const ClaimStatusMeta = {
+    [ClaimStatus.PENDING]: { label: 'Pending', color: '#faeed8', border: '#e8d0a0', text: '#855010' },
+    [ClaimStatus.PROCESSING]: { label: 'Processing', color: '#e8f0fa', border: '#b8d0f0', text: '#185fa5' },
+    [ClaimStatus.APPROVED]: { label: 'Approved', color: '#eaf4ec', border: '#b0ddb8', text: '#3a7d44' },
+    [ClaimStatus.REJECTED]: { label: 'Rejected', color: '#fceaea', border: '#f5c2c2', text: '#a32d2d' },
+};
+
+export class Claim {
+    constructor({ id, objectId, policyType, media, damageSplatURL, creationTime, status }) {
+        this.id = id;
+        this.objectId = objectId;
+        this.policyType = policyType;
+        this.media = media || [];
+        this.damageSplatURL = damageSplatURL || null;
+        this.creationTime = creationTime instanceof Date ? creationTime : new Date(creationTime);
+        this.status = status || ClaimStatus.PENDING;
+    }
+
+    get formattedDate() {
+        return this.creationTime.toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+        });
+    }
+}
+
 export class InsuredObject {
-    constructor({ id, title, image, type, policies, splatURL, creationTime, media }) {
+    constructor({ id, title, image, type, policies, splatURL, creationTime, media, claims }) {
         this.id = id;
         this.title = title;
         this.image = image || null;
@@ -31,13 +65,12 @@ export class InsuredObject {
         this.splatURL = splatURL || null;
         this.creationTime = creationTime instanceof Date ? creationTime : new Date(creationTime);
         this.media = media || [];
+        this.claims = claims || [];
     }
 
     get formattedDate() {
-        return this.creationTime.toLocaleDateString('en-GB', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
+        return this.creationTime.toLocaleDateString('en-GB', {            day: 'numeric',
+            month: 'short',            year: 'numeric',
         });
     }
 }
