@@ -6,32 +6,76 @@ import { CreationFlow } from './Flows/creationFlow.js';
 import { ClaimFlow } from './Flows/claimFlow.js';
 import { PolicyMeta, ClaimStatusMeta } from './insuredObject.js';
 
+// ── State ──
 let sceneLoaded = false;
 let gsViewer = null;
 let archiveList = null;
-let currentSplatUrl = null;
+let currentObj = null;
 const objects = [...mockObjects];
 
-// ── Scene area elements — declared first ──
+// ── Elements ──
 const loadingOverlay = document.getElementById('loading-overlay');
 const sceneContainer = document.getElementById('scene-container');
 const seeReconBtn = document.getElementById('see-reconstruction-btn');
 const xrBtn = document.getElementById('xr-toggle-btn');
 const stageEmpty = document.getElementById('stage-empty');
+const closeBtn = document.getElementById('splat-close-btn');
+const infoBtn = document.getElementById('splat-info-btn');
+const infoPanel = document.getElementById('splat-info-panel');
+const infoMinimize = document.getElementById('splat-info-minimize');
+const splatSelectorBar = document.getElementById('splat-selector-bar');
+const splatSelectorSelect = document.getElementById('splat-selector-select');
 
+// ── Info button toggle ──
+infoBtn.addEventListener('click', () => {
+    const isHidden = infoPanel.style.display === 'none';
+    infoPanel.style.display = isHidden ? 'block' : 'none';
+});
+
+infoMinimize.addEventListener('click', () => {
+    infoPanel.style.display = 'none';
+});
+
+// ── Close button ──
+closeBtn.addEventListener('click', () => {
+  if (gsViewer) {
+    gsViewer.dispose();
+    gsViewer = null;
+    // Re-init so it is ready for the next load
+    gsViewer = initGaussian();
+    bindGsViewer();
+  }
+  closeBtn.style.display = 'none';
+  infoBtn.style.display = 'none';
+  infoPanel.style.display = 'none';
+  xrBtn.style.display = 'none';
+  splatSelectorBar.style.display = 'none';
+  seeReconBtn.style.display = currentObj && currentObj.splatURL ? 'flex' : 'none';
+  stageEmpty.style.display = currentObj ? 'none' : 'flex';
+  updateInfoCard(currentObj, false);
+});
+
+// ── Splat selector ––
+splatSelectorSelect.addEventListener('change', async () => {
+  const url = splatSelectorSelect.value;
+  if (!url) return;
+  loadingOverlay.classList.add('visible');
+  try {
+    await gsViewer.load(url);
+  } catch (e) {
+    showErrorToast(
+      'Reconstruction unavailable',
+      'WebGL context could not be created. Close the browser and try again.'
+    );
+  }
+  loadingOverlay.classList.remove('visible');
+});
+
+// ── Initial state ──
 xrBtn.style.display = 'none';
 sceneContainer.style.display = 'none';
 
-
-// ── Disclaimer ──
-const disclaimerOverlay = document.getElementById('disclaimer-overlay');
-const disclaimerBtn = document.getElementById('disclaimer-btn');
-
-disclaimerBtn.addEventListener('click', () => {
-    disclaimerOverlay.style.display = 'none';
-});
-
-// ── Navigation maps ──
+// ── Navigation ──
 const sidePanes = {
     dashboard: document.getElementById('pane-dashboard'),
     bills: document.getElementById('pane-bills'),
@@ -48,26 +92,29 @@ const mainViews = {
 
 const sideMenu = document.getElementById('side-menu');
 
-// ── Navigation ──
 function navigateTo(page) {
-    Object.values(sidePanes).forEach(v => v.style.display = 'none');
-    Object.values(mainViews).forEach(v => v.style.display = 'none');
+  Object.values(sidePanes).forEach(v => v.style.display = 'none');
+  Object.values(mainViews).forEach(v => v.style.display = 'none');
 
-    sideMenu.style.display = page === 'dashboard' ? 'flex' : 'none';
+  // Destroy viewer when leaving dashboard
+  if (page !== 'dashboard') {
+    _teardownViewer();
+  }
 
-    sidePanes[page].style.display = 'block';
-    mainViews[page].style.display = 'flex';
+  sideMenu.style.display = page === 'dashboard' ? 'flex' : 'none';
+  sidePanes[page].style.display = 'block';
+  mainViews[page].style.display = 'flex';
 
-    document.querySelectorAll('[data-page]').forEach(a => {
-        a.classList.toggle('active', a.dataset.page === page);
-    });
+  document.querySelectorAll('[data-page]').forEach(a => {
+    a.classList.toggle('active', a.dataset.page === page);
+  });
 
-    if (page === 'dashboard' && !sceneLoaded) {
-        sceneLoaded = true;
-        gsViewer = initGaussian();
-        bindGsViewer(gsViewer);
-        initArchive();
-    }
+  if (page === 'dashboard' && !sceneLoaded) {
+    sceneLoaded = true;
+    gsViewer = initGaussian();
+    bindGsViewer();
+    initArchive();
+  }
 }
 
 document.querySelectorAll('[data-page]').forEach(link => {
@@ -79,7 +126,7 @@ document.querySelectorAll('[data-page]').forEach(link => {
 
 navigateTo('dashboard');
 
-// ── Archive List ──
+// ── Archive ──
 function initArchive() {
     archiveList = new ArchiveList({
         listEl: document.getElementById('cc-list'),
@@ -113,81 +160,183 @@ function initArchive() {
             const obj = objects.find(o => o.id === claim.objectId);
             if (obj) {
                 obj.claims.push(claim);
+                archiveList.setObjects(objects);
+                if (currentObj && currentObj.id === obj.id) {
+                    _rebuildSelector(obj);
+                    updateInfoCard(obj, gsViewer && gsViewer.wrapper.style.display !== 'none');
+                }
             }
-            console.log('[ClaimFlow] claim submitted:', claim);
         },
     });
 
     const addBtn = document.getElementById('cc-add-btn');
-    if (addBtn) {
-        addBtn.addEventListener('click', () => {
-            creationFlow.open();
-        });
-    }
+    if (addBtn) addBtn.addEventListener('click', () => creationFlow.open());
 
     const claimBtn = document.getElementById('cc-claim-btn');
-    if (claimBtn) {
-        claimBtn.addEventListener('click', () => {
-            claimFlow.open();
-        });
-    }
+    if (claimBtn) claimBtn.addEventListener('click', () => claimFlow.open());
 }
-
-
 
 // ── loadScan ──
 function loadScan(obj) {
-    seeReconBtn.style.display = 'none';
+    currentObj = obj;
+
+    gsViewer.hide();
+    closeBtn.style.display = 'none';
+    infoBtn.style.display = 'none';
+    infoPanel.style.display = 'none';
     xrBtn.style.display = 'none';
+    splatSelectorBar.style.display = 'none';
     stageEmpty.style.display = 'none';
 
-    currentSplatUrl = obj.splatURL || null;
-
-    if (gsViewer) gsViewer.hide();
-
-    seeReconBtn.style.display = 'flex';
-    seeReconBtn.dataset.splatUrl = obj.splatURL || '';
-
-    updateInfoCard(obj);
-
-    console.log('Scan selected:', obj.id);
-}
-
-// ── Gaussian Splat bindings ──
-function bindGsViewer(gsViewer) {
-    seeReconBtn.addEventListener('click', async () => {
-        const url = seeReconBtn.dataset.splatUrl ||
-            'https://huggingface.co/datasets/dylanebert/3dgs/resolve/main/bonsai/bonsai-7k.splat';
-
-        seeReconBtn.style.display = 'none';
-        loadingOverlay.classList.add('visible');
-
-        await gsViewer.load(url);
-
-        loadingOverlay.classList.remove('visible');
-        xrBtn.style.display = 'flex';
-        xrBtn.disabled = false;
-    });
-
-    gsViewer.onClose(() => {
-        gsViewer.hide();
-        stageEmpty.style.display = 'none';
+    if (obj.splatURL) {
         seeReconBtn.style.display = 'flex';
-        xrBtn.style.display = 'none';
-        xrBtn.disabled = false;
-    });
+        seeReconBtn.dataset.splatUrl = obj.splatURL;
+    } else {
+        seeReconBtn.style.display = 'none';
+        stageEmpty.style.display = 'flex';
+    }
+
+    updateInfoCard(obj, false);
 }
 
-// ── Splat Inspect ──
-document.getElementById('view-dashboard').addEventListener('splat:inspect', (e) => {
-    console.log('Inspecting splat at:', e.detail);
-});
+// ── Build splat selector options ──
+function _rebuildSelector(obj) {
+    const iconMap = {
+        fire: '🔥', water: '💧', theft: '🔒',
+        natural_disaster: '⛈️', vandalism: '🪣', electrical: '⚡',
+    };
 
-// ── Start Claim ──
-document.getElementById('start-claim-btn') &&
-    document.getElementById('start-claim-btn').addEventListener('click', () => {
-        console.log('Start claim clicked');
+    const options = [];
+
+    if (obj.splatURL) {
+        options.push({ label: 'Original', url: obj.splatURL });
+    }
+
+    if (obj.claims && obj.claims.length > 0) {
+        obj.claims
+            .slice()
+            .sort((a, b) => new Date(a.creationTime) - new Date(b.creationTime))
+            .forEach((claim, i) => {
+                if (claim.damageSplatURL) {
+                    const icon = iconMap[claim.policyType] || '';
+                    options.push({
+                        label: `${icon} Damage ${i + 1} · ${claim.formattedDate}`,
+                        url: claim.damageSplatURL,
+                    });
+                }
+            });
+    }
+
+    splatSelectorSelect.innerHTML = options.map(o =>
+        `<option value="${o.url}">${o.label}</option>`
+    ).join('');
+
+    // Show selector only if there are multiple options
+    splatSelectorBar.style.display = options.length > 1 ? 'flex' : 'none';
+}
+
+// ── bindGsViewer ──
+function bindGsViewer() {
+ seeReconBtn.addEventListener('click', async () => {
+ seeReconBtn.style.display = 'none';
+ loadingOverlay.classList.add('visible');
+
+ try {
+ await gsViewer.load(currentObj.splatURL);
+ loadingOverlay.classList.remove('visible');
+ closeBtn.style.display = 'block';
+ infoBtn.style.display = 'flex';
+ xrBtn.style.display = 'flex';
+ xrBtn.disabled = false;
+ _rebuildSelector(currentObj);
+ updateInfoCard(currentObj, true);
+ } catch (e) {
+ loadingOverlay.classList.remove('visible');
+ seeReconBtn.style.display = 'flex';
+ showErrorToast(
+ 'Reconstruction unavailable',
+ 'WebGL context could not be created. Too many renderers are open — close other tabs or reload the page.'
+ );
+ }
+ });
+}
+
+// ── updateInfoCard ──
+function updateInfoCard(obj, viewerIsOpen = false) {
+    const card = document.getElementById('stage-info-card');
+    const titleEl = document.getElementById('stage-info-title');
+    const metaEl = document.getElementById('stage-info-meta');
+    const policiesEl = document.getElementById('stage-info-policies');
+    const claimsEl = document.getElementById('stage-info-claims');
+    const claimsListEl = document.getElementById('stage-info-claims-list');
+
+    if (!card || !obj) {
+        if (card) card.style.display = 'none';
+        return;
+    }
+
+    titleEl.textContent = obj.title;
+    metaEl.textContent = `${obj.type === 'building' ? 'Building' : 'Household'} · insured ${obj.formattedDate}`;
+
+    policiesEl.innerHTML = obj.policies.map(key => {
+        const meta = PolicyMeta[key];
+        return `
+            <span class="stage-info-policy-chip" style="
+                background: ${meta.color};
+                border-color: ${meta.border};
+                color: var(--text-secondary);
+            ">
+                ${meta.icon} ${meta.label}
+            </span>
+        `;
+    }).join('');
+
+    if (obj.claims && obj.claims.length > 0) {
+        const sorted = [...obj.claims].sort((a, b) =>
+            new Date(b.creationTime) - new Date(a.creationTime)
+        );
+
+        claimsListEl.innerHTML = sorted.map(claim => {
+            const policyMeta = PolicyMeta[claim.policyType];
+            const statusMeta = ClaimStatusMeta[claim.status];
+            return `
+                <div class="stage-info-claim-item">
+                    <div class="stage-info-claim-row">
+                        <span class="stage-info-claim-type">
+                            ${policyMeta.icon} ${policyMeta.label}
+                        </span>
+                        <span class="stage-info-claim-status" style="
+                            background: ${statusMeta.color};
+                            border-color: ${statusMeta.border};
+                            color: ${statusMeta.text};
+                        ">
+                            ${statusMeta.label}
+                        </span>
+                    </div>
+                    <div class="stage-info-claim-date">${claim.formattedDate}</div>
+                </div>
+            `;
+        }).join('');
+
+        claimsEl.style.display = 'flex';
+    } else {
+        claimsEl.style.display = 'none';
+    }
+
+    card.style.display = 'flex';
+
+    // Collapse toggle — clone to avoid duplicate listeners
+    const toggle = document.getElementById('stage-info-toggle');
+    const body = document.getElementById('stage-info-body');
+    const fresh = toggle.cloneNode(true);
+    toggle.parentNode.replaceChild(fresh, toggle);
+
+    fresh.addEventListener('click', () => {
+        const isOpen = body.style.display !== 'none';
+        body.style.display = isOpen ? 'none' : 'flex';
+        fresh.querySelector('.stage-info-toggle-icon').classList.toggle('open', !isOpen);
     });
+}
 
 // ── XR Toggle ──
 xrBtn.addEventListener('click', async () => {
@@ -199,7 +348,12 @@ xrBtn.addEventListener('click', async () => {
         gsViewer.destroyForXR();
     }
 
-    const world = await initXR(currentSplatUrl);
+    closeBtn.style.display = 'none';
+    infoBtn.style.display = 'none';
+    infoPanel.style.display = 'none';
+    splatSelectorBar.style.display = 'none';
+
+    const world = await initXR(currentObj ? currentObj.splatURL : null);
 
     if (world) {
         world.visibilityState.subscribe((state) => {
@@ -214,7 +368,14 @@ xrBtn.addEventListener('click', async () => {
                 `;
                 xrBtn.disabled = false;
                 sceneContainer.style.display = 'none';
-                if (gsViewer) gsViewer.show();
+                if (currentObj && currentObj.splatURL) {
+                    gsViewer.load(currentObj.splatURL).then(() => {
+                        closeBtn.style.display = 'block';
+                        infoBtn.style.display = 'flex';
+                        _rebuildSelector(currentObj);
+                        updateInfoCard(currentObj, true);
+                    });
+                }
             } else {
                 xrBtn.innerHTML = 'Exit to Browser';
                 xrBtn.disabled = false;
@@ -241,71 +402,67 @@ document.getElementById('logout-btn').addEventListener('click', () => {
     console.log('Logout clicked');
 });
 
-// ── Stage Info Card ──
-function updateInfoCard(obj) {
-    const card = document.getElementById('stage-info-card');
-    const titleEl = document.getElementById('stage-info-title');
-    const metaEl = document.getElementById('stage-info-meta');
-    const policiesEl = document.getElementById('stage-info-policies');
-    const claimsEl = document.getElementById('stage-info-claims');
-    const claimsListEl = document.getElementById('stage-info-claims-list');
-
-    if (!obj) {
-        card.style.display = 'none';
-        return;
+// ── Disclaimer ──
+document.addEventListener('DOMContentLoaded', () => {
+    const disclaimerOverlay = document.getElementById('disclaimer-overlay');
+    const disclaimerBtn = document.getElementById('disclaimer-btn');
+    if (disclaimerOverlay && disclaimerBtn) {
+        disclaimerBtn.addEventListener('click', () => {
+            disclaimerOverlay.style.display = 'none';
+        });
     }
+});
 
-    titleEl.textContent = obj.title;
-    metaEl.textContent = `${obj.type === 'building' ? 'Building' : 'Household'} · insured ${obj.formattedDate}`;
+// ── Error Toast ––
+function showErrorToast(title, message) {
+  const existing = document.getElementById('error-toast');
+  if (existing) existing.remove();
 
-    policiesEl.innerHTML = obj.policies.map(key => {
-    const meta = PolicyMeta[key];
-    return `
-    <span class="stage-info-policy-chip" style="
-    background: ${meta.color};
-    border-color: ${meta.border};
-    color: var(--text-secondary);
-    ">
-    ${meta.icon} ${meta.label}
-    </span>
-    `;
-    }).join('');
-
-    if (obj.claims && obj.claims.length > 0) {
-    // Sort by most recent first
-    const sorted = [...obj.claims].sort((a, b) =>
-    new Date(b.creationTime) - new Date(a.creationTime)
-    );
-
-    claimsListEl.innerHTML = sorted.map(claim => {
-    const policyMeta = PolicyMeta[claim.policyType];
-    const statusMeta = ClaimStatusMeta[claim.status];
-    return `
-    <div class="stage-info-claim-item">
-    <div class="stage-info-claim-row">
-    <span class="stage-info-claim-type">
-    ${policyMeta.icon} ${policyMeta.label}
-    </span>
-    <span class="stage-info-claim-status" style="
-    background: ${statusMeta.color};
-    border-color: ${statusMeta.border};
-    color: ${statusMeta.text};
-    ">
-    ${statusMeta.label}
-    </span>
+  const toast = document.createElement('div');
+  toast.id = 'error-toast';
+  toast.className = 'error-toast';
+  toast.innerHTML = `
+    <div class="error-toast-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="9"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <circle cx="12" cy="16" r="0.5" fill="currentColor"/>
+      </svg>
     </div>
-    <div class="stage-info-claim-date">${claim.formattedDate}</div>
+    <div class="error-toast-body">
+      <div class="error-toast-title">${title}</div>
+      <div class="error-toast-msg">${message}</div>
     </div>
-    `;
-    }).join('');
+    <button class="error-toast-close" id="error-toast-close">✕</button>
+  `;
 
-    claimsEl.style.display = 'flex';
-    } else {
-    claimsEl.style.display = 'none';
+  document.body.appendChild(toast);
+
+  toast.querySelector('#error-toast-close').addEventListener('click', () => {
+    toast.classList.add('error-toast-hide');
+    setTimeout(() => toast.remove(), 300);
+  });
+
+  // Auto-dismiss after 6 seconds
+  setTimeout(() => {
+    if (document.getElementById('error-toast')) {
+      toast.classList.add('error-toast-hide');
+      setTimeout(() => toast.remove(), 300);
     }
+  }, 6000);
+}
 
-    card.style.display = 'flex';
+function _teardownViewer() {
+  if (gsViewer) {
+    gsViewer.dispose();
+    gsViewer = null;
+    sceneLoaded = false;
+  }
+  closeBtn.style.display = 'none';
+  infoBtn.style.display = 'none';
+  infoPanel.style.display = 'none';
+  xrBtn.style.display = 'none';
+  splatSelectorBar.style.display = 'none';
 }
 
 export { loadScan };
-

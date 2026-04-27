@@ -18,7 +18,7 @@
         <a href="#" data-page="products">My Products</a>
         <a href="#" data-page="claims">Claims</a>
       </nav>
-      <div class="header-spacer"></div>
+ <div class="header-spacer"></div>
       <div class="header-iconbtn" title="Alerts">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2H4.5L6 16z"/>
@@ -43,9 +43,9 @@
           <div class="profile-dropdown-item danger" id="logout-btn">Log out</div>
         </div>
       </div>
-    </header>
+ </header>
 
-    <!-- App Body -->
+ <!-- App Body -->
     <div class="app-body">
 
       <!-- Left Side Menu -->
@@ -54,195 +54,246 @@
         <!-- Dashboard pane -->
         <div id="pane-dashboard">
 
-          <!-- Weather -->
-          <div class="weather-card">
-            <svg class="weather-icon" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19 12a4 4 0 0 1 0 8H7z"/>
-            </svg>
-            <div>
-              <div class="weather-temp">18°</div>
-              <div class="weather-meta">Milan, IT · partly cloudy</div>
-            </div>
-          </div>
+ <!-- Weather -->
+ <div class="weather-card">
+ <svg class="weather-icon" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+ <path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19 12a4 4 0 0 1 0 8H7z"/>
+ </svg>
+ <div>
+ <div class="weather-temp">18°</div>
+ <div class="weather-meta">Milan, IT · partly cloudy</div>
+ </div>
+ </div>
 
-          <!-- Archive -->
-          <div class="archive-card">
-            <div class="archive-header">
-              <span class="archive-title">What's under cover</span>
-              <button class="cc-add-btn" id="cc-add-btn" title="Add to archive">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-              </button>
-            </div>
-            <input class="cc-search" id="cc-search" placeholder="Search in your archive" type="text" />
-            <div class="segment-picker" id="segment-picker">
-              <div class="segment-option active" data-segment="building">Building</div>
-              <div class="segment-option" data-segment="household">Household</div>
-            </div>
-            <div class="cc-list" id="cc-list"></div>
-            <div class="cc-claim-bar">
-                <button class="cc-claim-btn" id="cc-claim-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                        <path d="M12 5v14M5 12h14"/>
-                    </svg>
-                    Start a claim
-                </button>
-            </div>
-          </div>
+ <!-- Archive -->
+ <div class="archive-card">
+ <div class="archive-header">
+ <span class="archive-title">What's under cover</span>
+ <button class="cc-add-btn" id="cc-add-btn" title="Add to archive">
+ <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+ <line x1="12" y1="5" x2="12" y2="19"/>
+ <line x1="5" y1="12" x2="19" y2="12"/>
+ </svg>
+ </button>
+ </div>
+ <input class="cc-search" id="cc-search" placeholder="Search in your archive" type="text" />
+ <div class="segment-picker" id="segment-picker">
+ <div class="segment-option active" data-segment="building">Building</div>
+ <div class="segment-option" data-segment="household">Household</div>
+ </div>
+ <div class="cc-list" id="cc-list"></div>
+ <div class="cc-claim-bar">
+ <button class="cc-claim-btn" id="cc-claim-btn">
+ <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+ <path d="M12 5v14M5 12h14"/>
+ </svg>
+ Start a claim
+ </button>
+ </div>
+ </div>
 
-          <!-- Help -->
-          <div class="help-card">
-            <div class="help-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="9"/>
-                <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/>
-                <circle cx="12" cy="17" r="0.5" fill="currentColor"/>
-              </svg>
-            </div>
-            <div style="flex: 1;">
-              <div class="help-title">Get help</div>
-              <div class="help-sub">House assistant · file a claim · 24/7</div>
-            </div>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-tertiary);">
-              <path d="M9 6l6 6-6 6"/>
-            </svg>
-          </div>
+ <!-- Help -->
+ <div class="help-card">
+ <div class="help-icon">
+ <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+ <circle cx="12" cy="12" r="9"/>
+ <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/>
+ <circle cx="12" cy="17" r="0.5" fill="currentColor"/>
+ </svg>
+ </div>
+ <div style="flex: 1;">
+ <div class="help-title">Get help</div>
+ <div class="help-sub">House assistant · file a claim · 24/7</div>
+ </div>
+ <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-tertiary);">
+ <path d="M9 6l6 6-6 6"/>
+ </svg>
+ </div>
 
-        </div>
+ </div>
 
-        <!-- Bills pane -->
-        <div id="pane-bills" style="display:none;">
-          <div class="cc-card" style="color: var(--text-tertiary); font-size: 13px; text-align: center; padding: 32px 16px;">
-            Insurance bills · coming soon
-          </div>
-        </div>
+ <!-- Bills pane -->
+ <div id="pane-bills" style="display:none;">
+ <div class="cc-card" style="color: var(--text-tertiary); font-size: 13px; text-align: center; padding: 32px 16px;">
+ Insurance bills · coming soon
+ </div>
+ </div>
 
-        <!-- Products pane -->
-        <div id="pane-products" style="display:none;">
-          <div class="cc-card" style="color: var(--text-tertiary); font-size: 13px; text-align: center; padding: 32px 16px;">
-            My products · coming soon
-          </div>
-        </div>
+ <!-- Products pane -->
+ <div id="pane-products" style="display:none;">
+ <div class="cc-card" style="color: var(--text-tertiary); font-size: 13px; text-align: center; padding: 32px 16px;">
+ My products · coming soon
+ </div>
+ </div>
 
-        <!-- Claims pane -->
-        <div id="pane-claims" style="display:none;">
-          <div class="cc-card" style="color: var(--text-tertiary); font-size: 13px; text-align: center; padding: 32px 16px;">
-            Claims · coming soon
-          </div>
-        </div>
+ <!-- Claims pane -->
+ <div id="pane-claims" style="display:none;">
+ <div class="cc-card" style="color: var(--text-tertiary); font-size: 13px; text-align: center; padding: 32px 16px;">
+ Claims · coming soon
+ </div>
+ </div>
 
-      </div>
+ </div>
 
-      <!-- Main Stage -->
-      <div class="main-content" id="main-content">
+ <!-- Main Stage -->
+ <div class="main-content" id="main-content">
 
-        <!-- Dashboard stage -->
-        <div class="cc-stage" id="view-dashboard">
+ <div class="cc-stage" id="view-dashboard">
 
-            <!-- Empty state -->
-            <div class="stage-empty" id="stage-empty">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                    <polyline points="9 22 9 12 15 12 15 22"/>
-                </svg>
-                <span>Select an insured object to view its reconstruction</span>
-            </div>
-
-            <!-- See Reconstruction Button -->
-            <button id="see-reconstruction-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                </svg>
-                View reconstruction
-            </button>
-
-            <!-- Stage top bar -->
-            <div class="stage-topbar">
-                <div></div>
-            </div>
-
-            <!-- XR Button — bottom center -->
-            <button class="cc-vr-btn" id="xr-toggle-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="2" y="7" width="20" height="11" rx="3"/>
-                    <circle cx="8" cy="13" r="1.5"/>
-                    <circle cx="16" cy="13" r="1.5"/>
-                </svg>
-                Enter XR
-            </button>
-
-            <!-- Object Info Card — bottom left -->
-            <div class="stage-info-card" id="stage-info-card" style="display: none;">
-                <div class="stage-info-title" id="stage-info-title"></div>
-                <div class="stage-info-meta" id="stage-info-meta"></div>
-                <div class="stage-info-policies" id="stage-info-policies"></div>
-                <div class="stage-info-claims" id="stage-info-claims" style="display: none;">
-                    <div class="stage-info-claim-header">Claims</div>
-                    <div class="stage-info-claims-list" id="stage-info-claims-list"></div>
-                </div>
-            </div>
-
-            <!-- Loading overlay -->
-            <div id="loading-overlay">
-                <div class="loading-spinner"></div>
-                <span class="loading-label">Loading reconstruction...</span>
-            </div>
-
-            <!-- Scene container (IWSDK) -->
-            <div id="scene-container"></div>
-
-        </div>
-
-        <!-- Other page views -->
-        <div class="page-view" id="view-bills" style="display:none;">
-          Insurance Bills · coming soon
-        </div>
-
-        <div class="page-view" id="view-products" style="display:none;">
-          My Products · coming soon
-        </div>
-
-        <div class="page-view" id="view-claims" style="display:none;">
-          Claims · coming soon
-        </div>
-
-      </div>
+    <!-- Empty state -->
+    <div class="stage-empty" id="stage-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span>Select an insured object to view its reconstruction</span>
     </div>
+
+    <!-- See Reconstruction Button -->
+    <button id="see-reconstruction-btn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>
+        View reconstruction
+    </button>
+
+    <!-- Splat selector dropdown — top center, only when viewer is open -->
+    <div class="splat-selector-bar" id="splat-selector-bar" style="display:none;">
+        <select class="splat-selector-select" id="splat-selector-select"></select>
+    </div>
+
+    <!-- Unique close button — top right -->
+    <button class="splat-close-btn" id="splat-close-btn" style="display:none;">✕</button>
+
+    <!-- Unique info button — bottom right -->
+    <button class="splat-info-btn" id="splat-info-btn" style="display:none;">i</button>
+
+    <!-- Unique info panel — above info button -->
+    <div class="splat-info-panel" id="splat-info-panel" style="display:none;">
+        <div class="splat-info-header">
+            <span>Controls</span>
+            <button class="splat-info-minimize" id="splat-info-minimize">−</button>
+        </div>
+        <div class="splat-info-content">
+            <div class="splat-info-section">Navigation</div>
+            <div class="splat-hint-row">
+                <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+                <span>Move up / left / down / right</span>
+            </div>
+            <div class="splat-hint-row">
+                <kbd>Scroll</kbd>
+                <span>Zoom in / out</span>
+            </div>
+            <div class="splat-info-section">Camera</div>
+            <div class="splat-hint-row">
+                <kbd>Click</kbd>
+                <span>Point camera toward clicked position</span>
+            </div>
+            <div class="splat-hint-row">
+                <kbd>Click drag</kbd>
+                <span>Move position and view simultaneously</span>
+            </div>
+            <div class="splat-info-section">Rotation</div>
+            <div class="splat-hint-row">
+                <kbd>Ctrl</kbd><kbd>A</kbd>
+                <span>Rotate left</span>
+            </div>
+            <div class="splat-hint-row">
+                <kbd>Ctrl</kbd><kbd>S</kbd>
+                <span>Rotate down</span>
+            </div>
+            <div class="splat-hint-row">
+                <kbd>Ctrl</kbd><kbd>D</kbd>
+                <span>Rotate right</span>
+            </div>
+            <div class="splat-hint-row">
+                <kbd>Ctrl</kbd><kbd>W</kbd>
+                <span style="color: var(--text-danger);">Closes the browser tab</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stage top bar -->
+    <div class="stage-topbar"><div></div></div>
+
+    <!-- XR Button — bottom center -->
+    <button class="cc-vr-btn" id="xr-toggle-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="11" rx="3"/>
+            <circle cx="8" cy="13" r="1.5"/>
+            <circle cx="16" cy="13" r="1.5"/>
+        </svg>
+        Enter XR
+    </button>
+
+    <!-- Object Info Card — bottom left, collapsible -->
+    <div class="stage-info-card" id="stage-info-card" style="display:none;">
+        <div class="stage-info-toggle" id="stage-info-toggle">
+            <span class="stage-info-toggle-title" id="stage-info-title"></span>
+            <span class="stage-info-toggle-icon" id="stage-info-toggle-icon">▼</span>
+        </div>
+        <div class="stage-info-body" id="stage-info-body" style="display:none;">
+            <div class="stage-info-meta" id="stage-info-meta"></div>
+            <div class="stage-info-policies" id="stage-info-policies"></div>
+            <div class="stage-info-claims" id="stage-info-claims" style="display:none;">
+                <div class="stage-info-claim-header">Claims</div>
+                <div class="stage-info-claims-list" id="stage-info-claims-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <span class="loading-label">Loading reconstruction...</span>
+    </div>
+
+    <!-- Scene container (IWSDK) -->
+    <div id="scene-container"></div>
+
+</div>
+
+ <!-- Other page views -->
+ <div class="page-view" id="view-bills" style="display:none;">
+ Insurance Bills · coming soon
+ </div>
+
+ <div class="page-view" id="view-products" style="display:none;">
+ My Products · coming soon
+ </div>
+
+ <div class="page-view" id="view-claims" style="display:none;">
+ Claims · coming soon
+ </div>
+
+ </div>
+ </div>
 
     <!-- Disclaimer Modal -->
     <div class="disclaimer-overlay" id="disclaimer-overlay">
       <div class="disclaimer-modal">
         <div class="disclaimer-header">
-        <div class="disclaimer-tag">Proof of Concept</div>
-        <div class="disclaimer-title">ClaimCam</div>
+          <div class="disclaimer-tag">Proof of Concept</div>
+          <div class="disclaimer-title">ClaimCam</div>
         </div>
         <div class="disclaimer-body">
-          <p>
-            This application is a <strong>proof of concept</strong> built for the <strong>XRCC2026</strong>.
-            The data visible throughout the interface like insured objects, claims, policies,
-            weather and reconstructions are <strong>mocked</strong> due to the pricing
-            and time constraints involved in integrating real APIs at this stage.
-          </p>
-          <p>
-            The underlying technology is <strong>real and functional</strong>:
-            Gaussian Splatting reconstruction, WebXR immersive rendering and the full
-            insurance management flow all work end-to-end. However, the external APIs
-            required to generate live data are either too slow or too costly to run
-            reliably during a hackathon demo, so we chose to represent the final
-            product vision through realistic mock data instead.
-          </p>
-          <p>
-            What you are seeing is the <strong>intended final experience</strong> of ClaimCam.
-          </p>
-        </div>
-        <div class="disclaimer-footer">
-          <button class="disclaimer-btn" id="disclaimer-btn">I understand, continue</button>
-        </div>
-      </div>
-    </div>
+ <p>
+ This application is a <strong>proof of concept</strong> built for the <strong>XRCC2026</strong>.
+ The data visible throughout the interface like insured objects, claims, policies,
+ weather and reconstructions are <strong>mocked</strong> due to the pricing
+ and time constraints involved in integrating real APIs at this stage.
+ The main goal of this demo is to showcase a compelling and realistic vision of how immersive technologies could transform the insurance claims experience in the near future, and to explore the technical feasibility of that vision with the tools and resources currently available to us.
+ </p>
+ <p>
+ The underlying technology is <strong>real and evolving</strong>.
+ </p>
+ </div>
+ <div class="disclaimer-footer">
+ <button class="disclaimer-btn" id="disclaimer-btn">I understand, continue</button>
+ </div>
+ </div>
+ </div>
 
     <script type="module" src="/src/app.js"></script>
 

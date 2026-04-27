@@ -1,194 +1,151 @@
 import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 
+window.addEventListener('unhandledrejection', (e) => {
+  if (
+    e.reason &&
+    e.reason.name === 'NotFoundError' &&
+    typeof e.reason.message === 'string' &&
+    e.reason.message.includes('removeChild')
+  ) {
+    e.preventDefault();
+  }
+});
+
 export class GaussianSplatViewer {
 
-    constructor({ container }) {
-        this.container = container;
-        this.viewer = null;
-        this._xrActive = false;
+  constructor({ container }) {
+    this.container = container;
+    this.viewer = null;
+    this._xrActive = false;
+    this._activeRoot = null;
 
-        this.wrapper = document.createElement('div');
-        this.wrapper.style.position = 'absolute';
-        this.wrapper.style.inset = '0';
-        this.wrapper.style.width = '100%';
-        this.wrapper.style.height = '100%';
-        this.wrapper.style.zIndex = '10';
-        this.wrapper.style.display = 'none';
-        this.container.appendChild(this.wrapper);
+    this._resizeObserver = new ResizeObserver(() => this._onResize());
+    this._resizeObserver.observe(this.container);
+  }
 
-        this.closeBtn = document.createElement('button');
-        this.closeBtn.className = 'splat-close-btn';
-        this.closeBtn.textContent = '✕';
-        this.wrapper.appendChild(this.closeBtn);
+ async load(url) {
+    // Kill the old viewer by orphaning its root entirely
+    if (this.viewer) {
+      const oldViewer = this.viewer;
+      const oldRoot = this._activeRoot;
 
-        this.infoBtn = document.createElement('button');
-        this.infoBtn.className = 'splat-info-btn';
-        this.infoBtn.textContent = 'i';
-        this.wrapper.appendChild(this.infoBtn);
+      this.viewer = null;
+      this._activeRoot = null;
 
-        this.infoPanel = document.createElement('div');
-        this.infoPanel.className = 'splat-info-panel';
-        this.infoPanel.style.display = 'none';
-        this.infoPanel.innerHTML = `
-            <div class="splat-info-header">
-                <span>Controls</span>
-                <button class="splat-info-minimize">−</button>
-            </div>
-            <div class="splat-info-content">
-                <div class="splat-info-section">Navigation</div>
-                <div class="splat-hint-row">
-                    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
-                    <span>Move up / left / down / right</span>
-                </div>
-                <div class="splat-hint-row">
-                    <kbd>Scroll</kbd>
-                    <span>Zoom in / out</span>
-                </div>
-                <div class="splat-info-section">Camera</div>
-                <div class="splat-hint-row">
-                    <kbd>Click</kbd>
-                    <span>Point camera toward clicked position</span>
-                </div>
-                <div class="splat-hint-row">
-                    <kbd>Click drag</kbd>
-                    <span>Move position and view simultaneously</span>
-                </div>
-                <div class="splat-info-section">Rotation</div>
-                <div class="splat-hint-row">
-                    <kbd>Ctrl</kbd><kbd>A</kbd>
-                    <span>Rotate left</span>
-                </div>
-                <div class="splat-hint-row">
-                    <kbd>Ctrl</kbd><kbd>S</kbd>
-                    <span>Rotate down</span>
-                </div>
-                <div class="splat-hint-row">
-                    <kbd>Ctrl</kbd><kbd>D</kbd>
-                    <span>Rotate right</span>
-                </div>
-                <div class="splat-hint-row">
-                    <kbd>Ctrl</kbd><kbd>W</kbd>
-                    <span style="color: var(--text-danger);">Closes the browser tab</span>
-                </div>
-            </div>
-        `;
-        this.wrapper.appendChild(this.infoPanel);
+      try { oldViewer.stop(); } catch (e) {}
 
-        this.infoBtn.addEventListener('click', () => {
-            const isHidden = this.infoPanel.style.display === 'none';
-            this.infoPanel.style.display = isHidden ? 'block' : 'none';
-        });
+      // Detach the old root from container immediately
+      if (oldRoot && oldRoot.parentNode === this.container) {
+        this.container.removeChild(oldRoot);
+      }
 
-        this.infoPanel.querySelector('.splat-info-minimize').addEventListener('click', () => {
-            this.infoPanel.style.display = 'none';
-        });
-
-        this._resizeObserver = new ResizeObserver(() => this._onResize());
-        this._resizeObserver.observe(this.container);
+      // Let the library dispose in the background on its own detached root
+      setTimeout(() => {
+        try { oldViewer.dispose(); } catch (e) {}
+        try { if (oldRoot) oldRoot.remove(); } catch (e) {}
+      }, 200);
     }
 
-    async load(url) {
-        if (this.viewer) {
-            this._destroyViewer();
-        }
+    // Create a brand new root element for this viewer instance
+    const root = document.createElement('div');
+    root.style.cssText = `
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    `;
+    this.container.appendChild(root);
+    this._activeRoot = root;
 
-        this.wrapper.style.display = 'block';
+    await new Promise(r => requestAnimationFrame(r));
 
-        await new Promise(r => requestAnimationFrame(r));
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
 
-        const width = this.container.clientWidth;
-        const height = this.container.clientHeight;
+    try {
+      this.viewer = new GaussianSplats3D.Viewer({
+        rootElement: root,
+        selfDrivenMode: true,
+        useBuiltInControls: true,
+        sharedMemoryForWorkers: false,
+        width,
+        height,
+      });
 
-        this.viewer = new GaussianSplats3D.Viewer({
-            rootElement: this.wrapper,
-            selfDrivenMode: true,
-            useBuiltInControls: true,
-            sharedMemoryForWorkers: false,
-            width: width,
-            height: height,
-        });
+      await this.viewer.addSplatScene(url, {
+        splatAlphaRemovalThreshold: 5,
+        position: [0, 1.0, 0],
+        rotation: [1, 0, 0, 0],
+        scale: [1, 1, 1],
+      });
 
-        await this.viewer.addSplatScene(url, {
-            splatAlphaRemovalThreshold: 5,
-            position: [0, 1.0, 0],
-            rotation: [1, 0, 0, 0],
-            scale: [1, 1, 1]
-        });
+      this.viewer.start();
+      console.log('[GaussianSplat] loaded:', url);
+    } catch (e) {
+      console.error('[GaussianSplat] load failed:', e);
+      if (root.parentNode === this.container) {
+        this.container.removeChild(root);
+      }
+      this._activeRoot = null;
+      throw e;
+    }
+  }
 
-        this.viewer.start();
-        console.log('[GaussianSplat] loaded:', url);
+  show() {
+    this._xrActive = false;
+    if (this._activeRoot) this._activeRoot.style.display = 'block';
+    this._onResize();
+  }
+
+  hide() {
+    if (this._activeRoot) this._activeRoot.style.display = 'none';
+  }
+
+  setXRActive(active) {
+    this._xrActive = active;
+  }
+
+  destroyForXR() {
+    this._xrActive = true;
+    this._killViewer();
+  }
+
+  _killViewer() {
+    if (!this.viewer) return;
+
+    const oldViewer = this.viewer;
+    const oldRoot = this._activeRoot;
+
+    this.viewer = null;
+    this._activeRoot = null;
+
+    try { oldViewer.stop(); } catch (e) {}
+
+    if (oldRoot && oldRoot.parentNode === this.container) {
+      this.container.removeChild(oldRoot);
     }
 
-    async swap(url) {
-        await this.load(url);
-    }
+    setTimeout(() => {
+      try { oldViewer.dispose(); } catch (e) {}
+      try { if (oldRoot) oldRoot.remove(); } catch (e) {}
+    }, 200);
+  }
 
-    show() {
-        this._xrActive = false;
-        this.wrapper.style.display = 'block';
-        this.closeBtn.style.display = 'block';
-        this.infoBtn.style.display = 'flex';
-        this._onResize();
-    }
+  dispose() {
+    this._killViewer();
+    this._resizeObserver.disconnect();
+  }
 
-    hide() {
-        this.wrapper.style.display = 'none';
+  _onResize() {
+    if (this._xrActive) return;
+    if (this.viewer && this.viewer.renderer) {
+      const width = this.container.clientWidth;
+      const height = this.container.clientHeight;
+      this.viewer.renderer.setSize(width, height);
+      if (this.viewer.camera) {
+        this.viewer.camera.aspect = width / height;
+        this.viewer.camera.updateProjectionMatrix();
+      }
     }
-
-    setXRActive(active) {
-        this._xrActive = active;
-        // Hide interactive buttons while XR is presenting
-        this.closeBtn.style.display = active ? 'none' : 'block';
-        this.infoBtn.style.display = active ? 'none' : 'flex';
-        if (active) {
-            this.infoPanel.style.display = 'none';
-        }
-    }
-
-    onClose(callback) {
-        this.closeBtn.addEventListener('click', callback);
-    }
-
-    _onResize() {
-        if (this._xrActive) return;
-        if (this.viewer && this.viewer.renderer) {
-            const width = this.container.clientWidth;
-            const height = this.container.clientHeight;
-            this.viewer.renderer.setSize(width, height);
-            if (this.viewer.camera) {
-                this.viewer.camera.aspect = width / height;
-                this.viewer.camera.updateProjectionMatrix();
-            }
-        }
-    }
-
-    _destroyViewer() {
-        if (this.viewer) {
-            this.viewer.stop();
-            this.viewer.dispose();
-            this.viewer = null;
-        }
-        Array.from(this.wrapper.children).forEach(child => {
-            if (
-                child !== this.closeBtn &&
-                child !== this.infoBtn &&
-                child !== this.infoPanel
-            ) {
-                this.wrapper.removeChild(child);
-            }
-        });
-    }
-
-    dispose() {
-        this._destroyViewer();
-        this._resizeObserver.disconnect();
-        this.wrapper.remove();
-    }
-    
-    // Call this before initXR to free the WebGL context
-    destroyForXR() {
-        this._xrActive = true;
-        this._destroyViewer();
-        this.wrapper.style.display = 'none';
-    }
+  }
 }

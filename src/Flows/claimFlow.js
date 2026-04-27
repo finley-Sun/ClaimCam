@@ -2,59 +2,59 @@ import { Claim, ClaimStatus, PolicyMeta } from '../insuredObject.js';
 
 export class ClaimFlow {
 
-    constructor({ getObjects, onComplete }) {
-        this.getObjects = getObjects;
-        this.onComplete = onComplete;
-        this.draft = this._emptyDraft();
-        this._buildModal();
-    }
+  constructor({ getObjects, onComplete }) {
+    this.getObjects = getObjects;
+    this.onComplete = onComplete;
+    this.draft = this._emptyDraft();
+    this._buildModal();
+  }
 
-    open() {
-        this.draft = this._emptyDraft();
-        this._goToStep(1);
-        this.overlay.style.display = 'flex';
-    }
+  open() {
+    this.draft = this._emptyDraft();
+    this._goToStep(1);
+    this.overlay.style.display = 'flex';
+  }
 
-    close() {
-        this.overlay.style.display = 'none';
-    }
+  close() {
+    this.overlay.style.display = 'none';
+  }
 
-    _emptyDraft() {
-        return {
-            objectId: null,
-            policyType: null,
-            media: [],
-            damageSplatURL: null,
-        };
-    }
+  _emptyDraft() {
+    return {
+      objectId: null,
+      policyType: null,
+      media: [],
+      damageSplatURL: null,
+    };
+  }
 
-    _buildModal() {
-        this.overlay = document.createElement('div');
-        this.overlay.className = 'cf-overlay';
-        this.overlay.style.display = 'none';
+  _buildModal() {
+    this.overlay = document.createElement('div');
+    this.overlay.className = 'cf-overlay';
+    this.overlay.style.display = 'none';
 
-        this.modal = document.createElement('div');
-        this.modal.className = 'cf-modal';
+    this.modal = document.createElement('div');
+    this.modal.className = 'cf-modal';
 
-        this.overlay.appendChild(this.modal);
-        document.body.appendChild(this.overlay);
+    this.overlay.appendChild(this.modal);
+    document.body.appendChild(this.overlay);
 
-        this.overlay.addEventListener('click', (e) => {
-            if (e.target === this.overlay) this.close();
-        });
-    }
+    this.overlay.addEventListener('click', (e) => {
+      if (e.target === this.overlay) this.close();
+    });
+  }
 
-    _goToStep(step) {
-        this.currentStep = step;
-        this.modal.innerHTML = '';
-        const steps = {
-            1: '_renderStep1',
-            2: '_renderStep2',
-            3: '_renderStep3',
-            4: '_renderStep4',
-        };
-        if (steps[step]) this[steps[step]]();
-    }
+  _goToStep(step) {
+    this.currentStep = step;
+    this.modal.innerHTML = '';
+    const steps = {
+      1: '_renderStep1',
+      2: '_renderStep2',
+      3: '_renderStep3',
+      4: '_renderStep4',
+    };
+    if (steps[step]) this[steps[step]]();
+  }
 
     // ── Step 1: Select object ────────────────────────────────────────
 
@@ -411,53 +411,66 @@ export class ClaimFlow {
         });
     }
 
-    async _mockGenerate(obj) {
-        const idle = this.modal.querySelector('#cf-gen-idle');
-        const loading = this.modal.querySelector('#cf-gen-loading');
-        const done = this.modal.querySelector('#cf-gen-done');
-        const status = this.modal.querySelector('#cf-gen-status');
-        const footer = this.modal.querySelector('#cf-footer4');
+  async _mockGenerate(obj) {
+    const idle = this.modal.querySelector('#cf-gen-idle');
+    const loading = this.modal.querySelector('#cf-gen-loading');
+    const done = this.modal.querySelector('#cf-gen-done');
+    const status = this.modal.querySelector('#cf-gen-status');
+    const footer = this.modal.querySelector('#cf-footer4');
 
-        idle.style.display = 'none';
-        loading.style.display = 'flex';
-        footer.innerHTML = '';
+    idle.style.display = 'none';
+    loading.style.display = 'flex';
+    footer.innerHTML = '';
 
-        const steps = [
-            { label: 'Uploading damage media...', duration: 1200 },
-            { label: 'Processing frames...', duration: 1500 },
-            { label: 'Training damage Gaussian model...', duration: 2000 },
-            { label: 'Comparing with original scan...', duration: 1200 },
-            { label: 'Finalising claim...', duration: 800 },
-        ];
+    const steps = [
+      { label: 'Uploading damage media...', duration: 1200 },
+      { label: 'Processing frames...', duration: 1500 },
+      { label: 'Training damage Gaussian model...', duration: 2000 },
+      { label: 'Comparing with original scan...', duration: 1200 },
+      { label: 'Finalising claim...', duration: 800 },
+    ];
 
-        for (const step of steps) {
-            status.textContent = step.label;
-            await new Promise(r => setTimeout(r, step.duration));
-        }
-
-        this.draft.damageSplatURL =
-            'https://huggingface.co/datasets/dylanebert/3dgs/resolve/main/bonsai/bonsai-7k.splat';
-
-        loading.style.display = 'none';
-        done.style.display = 'flex';
-
-        const claim = new Claim({
-            id: crypto.randomUUID(),
-            objectId: this.draft.objectId,
-            policyType: this.draft.policyType,
-            media: this.draft.media,
-            damageSplatURL: this.draft.damageSplatURL,
-            creationTime: new Date(),
-            status: ClaimStatus.PENDING,
-        });
-
-        footer.innerHTML = `
-            <button class="cf-btn-primary" id="cf-finish">Close</button>
-        `;
-
-        footer.querySelector('#cf-finish').addEventListener('click', () => {
-            this.onComplete(claim);
-            this.close();
-        });
+    for (const step of steps) {
+      status.textContent = step.label;
+      await new Promise(r => setTimeout(r, step.duration));
     }
+
+    this.draft.damageSplatURL =
+      'https://huggingface.co/datasets/dylanebert/3dgs/resolve/main/bonsai/bonsai-7k.splat';
+
+    loading.style.display = 'none';
+    done.style.display = 'flex';
+
+    const claim = new Claim({
+      id: crypto.randomUUID(),
+      objectId: this.draft.objectId,
+      policyType: this.draft.policyType,
+      media: this.draft.media,
+      damageSplatURL: this.draft.damageSplatURL,
+      creationTime: new Date(),
+      status: ClaimStatus.PENDING,
+    });
+
+    footer.innerHTML = `
+      <button class="cf-btn-secondary" id="cf-close-done">Close without saving</button>
+      <button class="cf-btn-primary" id="cf-finish">Save claim</button>
+    `;
+
+    // Re-bind top close button since footer rewrite may have caused confusion
+    const topClose = this.modal.querySelector('#cf-close');
+    if (topClose) {
+      const freshClose = topClose.cloneNode(true);
+      topClose.parentNode.replaceChild(freshClose, topClose);
+      freshClose.addEventListener('click', () => this.close());
+    }
+
+    footer.querySelector('#cf-close-done').addEventListener('click', () => {
+      this.close();
+    });
+
+    footer.querySelector('#cf-finish').addEventListener('click', () => {
+      this.onComplete(claim);
+      this.close();
+    });
+  }
 }
