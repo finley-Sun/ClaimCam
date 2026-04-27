@@ -1,9 +1,5 @@
-import { ObjectType } from './insuredObject.js';
+import { ObjectType, ClaimStatus, ClaimStatusMeta } from './insuredObject.js';
 
-/**
- * Manages rendering and filtering of the insured objects list.
- * Calls onSelect(insuredObject) when an item is clicked.
- */
 export class ArchiveList {
 
     constructor({ listEl, searchEl, segmentEl, onSelect }) {
@@ -54,6 +50,13 @@ export class ArchiveList {
         });
     }
 
+    _latestClaim(obj) {
+        if (!obj.claims || obj.claims.length === 0) return null;
+        return obj.claims.reduce((latest, c) => {
+            return new Date(c.creationTime) > new Date(latest.creationTime) ? c : latest;
+        });
+    }
+
     render() {
         const items = this._filtered();
         this.listEl.innerHTML = '';
@@ -73,9 +76,13 @@ export class ArchiveList {
         }
 
         items.forEach(obj => {
+            const claim = this._latestClaim(obj);
+            const statusMeta = claim ? ClaimStatusMeta[claim.status] : null;
+
             const el = document.createElement('div');
             el.className = 'cc-item' + (obj.id === this.selectedId ? ' selected' : '');
             el.dataset.id = obj.id;
+
             el.innerHTML = `
                 <div class="cc-thumb">
                     ${obj.image
@@ -83,15 +90,26 @@ export class ArchiveList {
                         : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <rect x="3" y="3" width="18" height="18" rx="2"/>
                             <path d="M3 9h18"/>
-                           </svg>`
+                        </svg>`
                     }
                 </div>
                 <div class="cc-item-body">
                     <div class="cc-item-name">${obj.title}</div>
-                    <div class="cc-chip">
-                        <span class="dot"></span>
-                        ${obj.formattedDate}
-                    </div>
+                    ${statusMeta ? `
+                        <div class="cc-chip cc-chip-claim" style="
+                            background: ${statusMeta.color};
+                            border-color: ${statusMeta.border};
+                            color: ${statusMeta.text};
+                        ">
+                            <span class="dot" style="background: ${statusMeta.text};"></span>
+                            ${statusMeta.label}
+                        </div>
+                    ` : `
+                        <div class="cc-chip">
+                            <span class="dot"></span>
+                            ${obj.formattedDate}
+                        </div>
+                    `}
                 </div>
             `;
 

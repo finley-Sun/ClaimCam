@@ -2,7 +2,8 @@ import { initXR, initGaussian } from './index.js';
 import { VisibilityState } from '@iwsdk/core';
 import { ArchiveList } from './archiveList.js';
 import { mockObjects } from './mockData.js';
-import { CreationFlow } from './creationFlow.js';
+import { CreationFlow } from './Flows/creationFlow.js';
+import { ClaimFlow } from './Flows/claimFlow.js';
 
 let sceneLoaded = false;
 let gsViewer = null;
@@ -88,7 +89,7 @@ function initArchive() {
 
     archiveList.setObjects(objects);
 
-    const flow = new CreationFlow({
+    const creationFlow = new CreationFlow({
         onComplete: (obj, previous) => {
             if (previous) {
                 const idx = objects.findIndex(o => o.id === previous.id);
@@ -105,9 +106,30 @@ function initArchive() {
         },
     });
 
-    document.getElementById('cc-add-btn').addEventListener('click', () => {
-        flow.open();
+    const claimFlow = new ClaimFlow({
+        getObjects: () => objects,
+        onComplete: (claim) => {
+            const obj = objects.find(o => o.id === claim.objectId);
+            if (obj) {
+                obj.claims.push(claim);
+            }
+            console.log('[ClaimFlow] claim submitted:', claim);
+        },
     });
+
+    const addBtn = document.getElementById('cc-add-btn');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            creationFlow.open();
+        });
+    }
+
+    const claimBtn = document.getElementById('cc-claim-btn');
+    if (claimBtn) {
+        claimBtn.addEventListener('click', () => {
+            claimFlow.open();
+        });
+    }
 }
 
 // ── loadScan ──

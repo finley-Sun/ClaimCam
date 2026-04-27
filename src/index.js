@@ -7,8 +7,8 @@ import {
 } from '@iwsdk/core';
 
 import { EnvironmentType, LocomotionEnvironment } from '@iwsdk/core';
-import { GaussianSplatViewer } from './gaussianSplat.js';
-import { XRSplatLoader, createXRSplatSystem } from './xrSplatSystem.js';
+import { GaussianSplatViewer } from './SplatManagement/gaussianSplat.js';
+import { XRSplatLoader, createXRSplatSystem } from './SplatManagement/xrSplatSystem.js';
 
 const assets = {
     environmentDesk: {

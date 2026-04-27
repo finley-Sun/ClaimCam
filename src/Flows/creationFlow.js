@@ -1,4 +1,4 @@
-import { InsuredObject, ObjectType, PolicyType, PolicyMeta } from './insuredObject.js';
+import { InsuredObject, ObjectType, PolicyType, PolicyMeta } from '../insuredObject.js';
 
 /**
  * CreationFlow

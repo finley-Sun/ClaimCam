@@ -1400,3 +1400,102 @@ kbd {
 .cf-media-badge-img {
     background: rgba(0, 0, 0, 0.4);
 }
+
+/* ── Claim Bar ── */
+.cc-claim-bar {
+    padding-top: 10px;
+    border-top: 0.5px solid var(--border-tertiary);
+    flex-shrink: 0;
+}
+
+.cc-claim-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px;
+    background: var(--bg-secondary);
+    border: 0.5px solid var(--border-secondary);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+}
+
+.cc-claim-btn:hover {
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    border-color: var(--text-primary);
+}
+
+/* ── Claim Object List ── */
+.claim-object-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.claim-object-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--border-tertiary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.claim-object-item:hover {
+    background: var(--bg-secondary);
+}
+
+.claim-object-item.selected {
+    background: var(--bg-secondary);
+    border-color: var(--text-primary);
+}
+
+.claim-object-check {
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* ── Claim Summary ── */
+.claim-summary {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 0.5px solid var(--border-tertiary);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.claim-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
+.claim-summary-key {
+    color: var(--text-tertiary);
+}
+
+.claim-summary-val {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* ── Claim status chip override ── */
+.cc-chip-claim {
+    font-weight: 500;
+}
