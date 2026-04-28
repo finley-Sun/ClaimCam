@@ -56,7 +56,8 @@ export class Claim {
 }
 
 export class InsuredObject {
-    constructor({ id, title, image, type, policies, splatURL, creationTime, media, claims }) {
+    constructor({ id, title, image, type, policies, splatURL, creationTime, media, claims,
+                  receipt, objectValue, purchaseYear }) {
         this.id = id;
         this.title = title;
         this.image = image || null;
@@ -66,8 +67,10 @@ export class InsuredObject {
         this.creationTime = creationTime instanceof Date ? creationTime : new Date(creationTime);
         this.media = media || [];
         this.claims = claims || [];
+        this.receipt = receipt || null;
+        this.objectValue = objectValue || null;
+        this.purchaseYear = purchaseYear || null;
     }
-
     get formattedDate() {
         return this.creationTime.toLocaleDateString('en-GB', {            day: 'numeric',
             month: 'short',            year: 'numeric',

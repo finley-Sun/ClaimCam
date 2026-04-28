@@ -1372,6 +1372,16 @@ kbd {
  background: rgba(0, 0, 0, 0.4);
 }
 
+.cf-duplicate-warning {
+ font-size: 12px;
+ color: var(--text-danger);
+ background: var(--bg-danger);
+ border: 0.5px solid #f5c2c2;
+ border-radius: var(--radius-md);
+ padding: 8px 12px;
+ flex: 1;
+}
+
 /* ── Claim Bar ── */
 .cc-claim-bar {
  padding-top: 10px;
@@ -1784,6 +1794,7 @@ kbd {
  color: var(--text-tertiary);
  flex-shrink: 0;
  transition: transform 0.2s ease;
+ transform: rotate(180deg);
 }
 
 .stage-info-toggle-icon.open {
@@ -2006,4 +2017,114 @@ kbd {
 
 .error-toast-close:hover {
  color: var(--text-primary);
+}
+
+/* ── Receipt step ── */
+.cf-receipt-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg-secondary);
+    border: 0.5px solid var(--border-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.cf-receipt-name {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cf-receipt-remove {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    border: none;
+    font-size: 10px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+}
+
+.cf-receipt-remove:hover {
+    background: var(--border-secondary);
+}
+
+.cf-receipt-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 4px 0;
+}
+
+.cf-receipt-divider-line {
+    flex: 1;
+    height: 0.5px;
+    background: var(--border-tertiary);
+}
+
+.cf-receipt-divider-text {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
+.cf-manual-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* ── List item valuation ── */
+.cc-item-valuation {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 1px;
+    margin-bottom: 2px;
+}
+
+.cc-item-val-icon {
+    font-size: 10px;
+    line-height: 1;
+}
+
+/* ── Info card valuation section ── */
+.stage-info-valuation {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 0;
+    border-top: 0.5px solid var(--border-tertiary);
+}
+
+.stage-info-val-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.stage-info-val-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.stage-info-val-value {
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 600;
 }

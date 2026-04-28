@@ -295,6 +295,46 @@ function updateInfoCard(obj, viewerIsOpen = false) {
         `;
     }).join('');
 
+    // ── Valuation section ──
+    let valuationEl = document.getElementById('stage-info-valuation');
+    if (!valuationEl) {
+        valuationEl = document.createElement('div');
+        valuationEl.id = 'stage-info-valuation';
+        valuationEl.className = 'stage-info-valuation';
+        policiesEl.parentNode.insertBefore(valuationEl, policiesEl.nextSibling);
+    }
+
+    if (obj.receipt) {
+        valuationEl.innerHTML = `
+            <div class="stage-info-valuation-row">
+                <span class="stage-info-valuation-label">Receipt</span>
+                <span class="stage-info-valuation-value">
+                    🧾 ${obj.receipt.name || 'Attached'}
+                </span>
+            </div>
+        `;
+        valuationEl.style.display = 'flex';
+    } else if (obj.objectValue) {
+        valuationEl.innerHTML = `
+            <div class="stage-info-valuation-row">
+                <span class="stage-info-valuation-label">Value</span>
+                <span class="stage-info-valuation-value">
+                    €${Number(obj.objectValue).toLocaleString('en-GB',
+                        { minimumFractionDigits: 2 })}
+                </span>
+            </div>
+            ${obj.purchaseYear ? `
+            <div class="stage-info-valuation-row">
+                <span class="stage-info-valuation-label">Purchased</span>
+                <span class="stage-info-valuation-value">${obj.purchaseYear}</span>
+            </div>
+            ` : ''}
+        `;
+        valuationEl.style.display = 'flex';
+    } else {
+        valuationEl.style.display = 'none';
+    }
+
     if (obj.claims && obj.claims.length > 0) {
         const sorted = [...obj.claims].sort((a, b) =>
             new Date(b.creationTime) - new Date(a.creationTime)
@@ -332,13 +372,15 @@ function updateInfoCard(obj, viewerIsOpen = false) {
     // Collapse toggle — clone to avoid duplicate listeners
     const toggle = document.getElementById('stage-info-toggle');
     const body = document.getElementById('stage-info-body');
+
     const fresh = toggle.cloneNode(true);
     toggle.parentNode.replaceChild(fresh, toggle);
 
     fresh.addEventListener('click', () => {
         const isOpen = body.style.display !== 'none';
         body.style.display = isOpen ? 'none' : 'flex';
-        fresh.querySelector('.stage-info-toggle-icon').classList.toggle('open', !isOpen);
+        const icon = fresh.querySelector('.stage-info-toggle-icon');
+        icon.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
     });
 }
 

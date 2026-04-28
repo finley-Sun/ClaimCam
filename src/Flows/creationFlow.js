@@ -23,15 +23,18 @@ export class CreationFlow {
   open(existingObject = null) {
     this.editTarget = existingObject || null;
     if (existingObject) {
-      this.draft = {
-        title: existingObject.title,
-        type: existingObject.type,
-        policies: [...existingObject.policies],
-        media: [...existingObject.media],
-        splatURL: existingObject.splatURL,
-      };
+        this.draft = {
+            title: existingObject.title,
+            type: existingObject.type,
+            policies: [...existingObject.policies],
+            media: [...existingObject.media],
+            splatURL: existingObject.splatURL,
+            receipt: existingObject.receipt || null,
+            objectValue: existingObject.objectValue || '',
+            purchaseYear: existingObject.purchaseYear || '',
+        };
     } else {
-      this.draft = this._emptyDraft();
+        this.draft = this._emptyDraft();
     }
     this._goToStep(1);
     this.overlay.style.display = 'flex';
@@ -42,13 +45,16 @@ export class CreationFlow {
   }
 
   _emptyDraft() {
-    return {
-      title: '',
-      type: ObjectType.BUILDING,
-      policies: [],
-      media: [],
-      splatURL: null,
-    };
+      return {
+          title: '',
+          type: ObjectType.BUILDING,
+          policies: [],
+          media: [],
+          splatURL: null,
+          receipt: null,
+          objectValue: '',
+          purchaseYear: '',
+      };
   }
 
   // ── Modal shell ──────────────────────────────────────────────────
@@ -70,10 +76,16 @@ export class CreationFlow {
   }
 
   _goToStep(step) {
-    this.currentStep = step;
-    this.modal.innerHTML = '';
-    const steps = { 1: '_renderStep1', 2: '_renderStep2', 3: '_renderStep3', 4: '_renderStep4' };
-    if (steps[step]) this[steps[step]]();
+      this.currentStep = step;
+      this.modal.innerHTML = '';
+      const steps = {
+          1: '_renderStep1',
+          2: '_renderStep2',
+          3: '_renderStep3',
+          4: '_renderStep4',
+          5: '_renderStep5',
+      };
+      if (steps[step]) this[steps[step]]();
   }
 
   // ── Step 1: Basic info ───────────────────────────────────────────
@@ -81,7 +93,7 @@ export class CreationFlow {
   _renderStep1() {
     this.modal.innerHTML = `
       <div class="cf-header">
-        <div class="cf-step-label">Step 1 of 4</div>
+      <div class="cf-step-label">Step 1 of 5</div>
         <div class="cf-title">${this.editTarget ? 'Edit object' : 'New insured object'}</div>
         <button class="cf-close" id="cf-close">✕</button>
       </div>
@@ -153,7 +165,7 @@ export class CreationFlow {
   _renderStep2() {
     this.modal.innerHTML = `
       <div class="cf-header">
-        <div class="cf-step-label">Step 2 of 4</div>
+        <div class="cf-step-label">Step 2 of 5</div>
         <div class="cf-title">Insurance policies</div>
         <button class="cf-close" id="cf-close">✕</button>
       </div>
@@ -204,10 +216,157 @@ export class CreationFlow {
 
   // ── Step 3: Media upload ─────────────────────────────────────────
 
-  _renderStep3() {
+_renderStep3() {
+    const hasReceipt = !!this.draft.receipt;
+
     this.modal.innerHTML = `
         <div class="cf-header">
-            <div class="cf-step-label">Step 3 of 4</div>
+            <div class="cf-step-label">Step 3 of 5</div>
+            <div class="cf-title">Purchase receipt</div>
+            <button class="cf-close" id="cf-close">✕</button>
+        </div>
+        <div class="cf-body">
+            <div class="cf-upload-zone" id="cf-receipt-zone">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12
+                             a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                </svg>
+                <span>Upload a purchase receipt</span>
+                <span class="cf-upload-sub">PDF, JPG or PNG</span>
+                <input type="file" id="cf-receipt-input"
+                       accept=".pdf,image/*" style="display:none;" />
+            </div>
+
+            <div class="cf-receipt-preview" id="cf-receipt-preview"
+                 style="display:${hasReceipt ? 'flex' : 'none'};">
+                <span class="cf-receipt-name" id="cf-receipt-name">
+                    ${hasReceipt ? this.draft.receipt.name : ''}
+                </span>
+                <button class="cf-receipt-remove" id="cf-receipt-remove">✕</button>
+            </div>
+
+            <div class="cf-receipt-divider" id="cf-receipt-divider">
+                <span class="cf-receipt-divider-line"></span>
+                <span class="cf-receipt-divider-text">
+                    or enter details manually
+                </span>
+                <span class="cf-receipt-divider-line"></span>
+            </div>
+
+            <div class="cf-manual-fields" id="cf-manual-fields"
+                 style="display:${hasReceipt ? 'none' : 'flex'};">
+                <div class="cf-field">
+                    <label class="cf-label">Object value (EUR)</label>
+                    <input class="cf-input" id="cf-obj-value" type="number"
+                           min="0" step="0.01"
+                           placeholder="e.g. 1200.00"
+                           value="${this.draft.objectValue}" />
+                </div>
+                <div class="cf-field">
+                    <label class="cf-label">Purchase year</label>
+                    <input class="cf-input" id="cf-obj-year" type="number"
+                           min="1900" max="${new Date().getFullYear()}"
+                           placeholder="e.g. 2022"
+                           value="${this.draft.purchaseYear}" />
+                </div>
+            </div>
+        </div>
+        <div class="cf-footer">
+            <button class="cf-btn-secondary" id="cf-back3">Back</button>
+            <button class="cf-btn-primary" id="cf-next3">Continue</button>
+        </div>
+    `;
+
+    // Close / back
+    this.modal.querySelector('#cf-close')
+        .addEventListener('click', () => this.close());
+    this.modal.querySelector('#cf-back3')
+        .addEventListener('click', () => this._goToStep(3));
+
+    // Receipt upload
+    const receiptZone = this.modal.querySelector('#cf-receipt-zone');
+    const receiptInput = this.modal.querySelector('#cf-receipt-input');
+    const preview = this.modal.querySelector('#cf-receipt-preview');
+    const nameEl = this.modal.querySelector('#cf-receipt-name');
+    const manualFields = this.modal.querySelector('#cf-manual-fields');
+
+    receiptZone.addEventListener('click', () => receiptInput.click());
+
+    receiptZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        receiptZone.classList.add('drag-over');
+    });
+    receiptZone.addEventListener('dragleave', () => {
+        receiptZone.classList.remove('drag-over');
+    });
+    receiptZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        receiptZone.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) applyReceipt(e.dataTransfer.files[0]);
+    });
+
+    receiptInput.addEventListener('change', () => {
+        if (receiptInput.files.length) applyReceipt(receiptInput.files[0]);
+    });
+
+    const applyReceipt = (file) => {
+        this.draft.receipt = file;
+        this.draft.objectValue = '';
+        this.draft.purchaseYear = '';
+        nameEl.textContent = file.name;
+        preview.style.display = 'flex';
+        manualFields.style.display = 'none';
+    };
+
+    // Remove receipt
+    this.modal.querySelector('#cf-receipt-remove')
+        .addEventListener('click', () => {
+            this.draft.receipt = null;
+            preview.style.display = 'none';
+            manualFields.style.display = 'flex';
+        });
+
+    // Manual inputs
+    this.modal.querySelector('#cf-obj-value')
+        .addEventListener('input', (e) => {
+            this.draft.objectValue = e.target.value;
+        });
+    this.modal.querySelector('#cf-obj-year')
+        .addEventListener('input', (e) => {
+            this.draft.purchaseYear = e.target.value;
+        });
+
+    // Continue -- validate
+    this.modal.querySelector('#cf-next3')
+        .addEventListener('click', () => {
+            if (this.draft.receipt) {
+                this._goToStep(4);
+                return;
+            }
+            const val = this.draft.objectValue;
+            const yr = this.draft.purchaseYear;
+            if (!val || Number(val) <= 0) {
+                this.modal.querySelector('#cf-obj-value').focus();
+                return;
+            }
+            if (!yr || Number(yr) < 1900
+                || Number(yr) > new Date().getFullYear()) {
+                this.modal.querySelector('#cf-obj-year').focus();
+                return;
+            }
+            this._goToStep(4);
+        });
+  }
+
+  _renderStep4() {
+    this.modal.innerHTML = `
+        <div class="cf-header">
+        <div class="cf-step-label">Step 4 of 5</div>
             <div class="cf-title">Add media</div>
             <button class="cf-close" id="cf-close">✕</button>
         </div>
@@ -272,9 +431,8 @@ export class CreationFlow {
 
     this.modal.querySelector('#cf-back3').addEventListener('click', () => this._goToStep(2));
     this.modal.querySelector('#cf-next3').addEventListener('click', () => {
-        if (this._mediaScore() >= 15) this._goToStep(4);
+        if (this._mediaScore() >= 15) this._goToStep(5);
     });
-
     requestAnimationFrame(() => this._renderMediaGrid());
 }
 
@@ -366,12 +524,12 @@ _mediaScore() {
       });
   }
 
-  // ── Step 4: Splat generation (mocked) ───────────────────────────
+  // ── Step 5: Splat generation (mocked) ───────────────────────────
 
-  _renderStep4() {
+  _renderStep5() {
     this.modal.innerHTML = `
       <div class="cf-header">
-        <div class="cf-step-label">Step 4 of 4</div>
+        <div class="cf-step-label">Step 4 of 5</div>
         <div class="cf-title">Generate reconstruction</div>
         <button class="cf-close" id="cf-close">✕</button>
       </div>
@@ -407,7 +565,7 @@ _mediaScore() {
     `;
 
     this.modal.querySelector('#cf-close').addEventListener('click', () => this.close());
-    this.modal.querySelector('#cf-back4').addEventListener('click', () => this._goToStep(3));
+    this.modal.querySelector('#cf-back4').addEventListener('click', () => this._goToStep(4));
     this.modal.querySelector('#cf-gen-start').addEventListener('click', () => {
       this._mockGenerate();
     });
@@ -450,14 +608,17 @@ _mediaScore() {
 
     footer.querySelector('#cf-finish').addEventListener('click', () => {
       const obj = new InsuredObject({
-        id: this.editTarget ? this.editTarget.id : crypto.randomUUID(),
-        title: this.draft.title,
-        image: this.draft.media[0]?.url || null,
-        type: this.draft.type,
-        policies: this.draft.policies,
-        splatURL: this.draft.splatURL,
-        creationTime: this.editTarget ? this.editTarget.creationTime : new Date(),
-        media: this.draft.media,
+          id: this.editTarget ? this.editTarget.id : crypto.randomUUID(),
+          title: this.draft.title,
+          image: this.draft.media[0]?.url || null,
+          type: this.draft.type,
+          policies: this.draft.policies,
+          splatURL: this.draft.splatURL,
+          creationTime: this.editTarget ? this.editTarget.creationTime : new Date(),
+          media: this.draft.media,
+          receipt: this.draft.receipt || null,
+          objectValue: this.draft.objectValue || null,
+          purchaseYear: this.draft.purchaseYear || null,
       });
 
       this.onComplete(obj, this.editTarget);
