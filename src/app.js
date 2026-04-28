@@ -11,6 +11,7 @@ let sceneLoaded = false;
 let gsViewer = null;
 let archiveList = null;
 let currentObj = null;
+let currentSplatUrl = null;
 const objects = [...mockObjects];
 
 // ── Elements ──
@@ -57,18 +58,19 @@ closeBtn.addEventListener('click', () => {
 
 // ── Splat selector ––
 splatSelectorSelect.addEventListener('change', async () => {
-  const url = splatSelectorSelect.value;
-  if (!url) return;
-  loadingOverlay.classList.add('visible');
-  try {
-    await gsViewer.load(url);
-  } catch (e) {
-    showErrorToast(
-      'Reconstruction unavailable',
-      'WebGL context could not be created. Close the browser and try again.'
-    );
-  }
-  loadingOverlay.classList.remove('visible');
+    const url = splatSelectorSelect.value;
+    if (!url) return;
+    currentSplatUrl = url;
+    loadingOverlay.classList.add('visible');
+    try {
+        await gsViewer.load(url);
+    } catch (e) {
+        showErrorToast(
+            'Reconstruction unavailable',
+            'WebGL context could not be created. Close other tabs or reload the page.'
+        );
+    }
+    loadingOverlay.classList.remove('visible');
 });
 
 // ── Initial state ──
@@ -214,24 +216,26 @@ function _rebuildSelector(obj) {
 
     if (obj.claims && obj.claims.length > 0) {
         obj.claims
-            .slice()
-            .sort((a, b) => new Date(a.creationTime) - new Date(b.creationTime))
-            .forEach((claim, i) => {
-                if (claim.damageSplatURL) {
-                    const icon = iconMap[claim.policyType] || '';
-                    options.push({
-                        label: `${icon} Damage ${i + 1} · ${claim.formattedDate}`,
-                        url: claim.damageSplatURL,
-                    });
-                }
-            });
+        .slice()
+        .sort((a, b) => new Date(a.creationTime) - new Date(b.creationTime))
+        .forEach((claim, i) => {
+            if (claim.damageSplatURL) {
+                const icon = iconMap[claim.policyType] || '';
+                options.push({
+                    label: `${icon} Damage ${i + 1} · ${claim.formattedDate}`,
+                    url: claim.damageSplatURL,
+                });
+            }
+        });
     }
 
     splatSelectorSelect.innerHTML = options.map(o =>
         `<option value="${o.url}">${o.label}</option>`
     ).join('');
 
-    // Show selector only if there are multiple options
+    // Track the currently visible splat
+    currentSplatUrl = options.length > 0 ? options[0].url : null;
+
     splatSelectorBar.style.display = options.length > 1 ? 'flex' : 'none';
 }
 
@@ -353,23 +357,24 @@ xrBtn.addEventListener('click', async () => {
     infoPanel.style.display = 'none';
     splatSelectorBar.style.display = 'none';
 
-    const world = await initXR(currentObj ? currentObj.splatURL : null);
+    // Use currentSplatUrl — respects the dropdown selection
+    const world = await initXR(currentSplatUrl);
 
     if (world) {
         world.visibilityState.subscribe((state) => {
             if (state === VisibilityState.NonImmersive) {
                 xrBtn.innerHTML = `
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                        <rect x="2" y="7" width="20" height="11" rx="3"/>
-                        <circle cx="8" cy="13" r="1.5"/>
-                        <circle cx="16" cy="13" r="1.5"/>
-                    </svg>
-                    Enter XR
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <rect x="2" y="7" width="20" height="11" rx="3"/>
+                    <circle cx="8" cy="13" r="1.5"/>
+                    <circle cx="16" cy="13" r="1.5"/>
+                </svg>
+                Enter XR
                 `;
                 xrBtn.disabled = false;
                 sceneContainer.style.display = 'none';
-                if (currentObj && currentObj.splatURL) {
-                    gsViewer.load(currentObj.splatURL).then(() => {
+                if (currentSplatUrl) {
+                    gsViewer.load(currentSplatUrl).then(() => {
                         closeBtn.style.display = 'block';
                         infoBtn.style.display = 'flex';
                         _rebuildSelector(currentObj);

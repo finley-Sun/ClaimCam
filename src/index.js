@@ -42,8 +42,10 @@ export async function initXR(splatUrl) {
         },
         features: {
             locomotion: {
-                useWorker: true,
-                gravity: false,
+            useWorker: true,
+            gravity: false,
+            enableGravity: false,
+            gravityEnabled: false,
             },
             grabbing: false,
             physics: false,
