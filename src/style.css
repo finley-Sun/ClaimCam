@@ -54,25 +54,12 @@ header {
   z-index: 10;
 }
 
-.header-logo {
- width: 32px;
- height: 32px;
- border-radius: 8px;
- background: var(--bg-secondary);
- display: flex;
- align-items: center;
- justify-content: center;
- font-size: 11px;
- color: var(--text-tertiary);
- flex-shrink: 0;
-}
-
-.header-title {
- font-size: 16px;
- font-weight: 500;
- color: var(--text-primary);
- margin-right: 22px;
- flex-shrink: 0;
+.header-logo-img {
+    height: 32px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+    margin-right: 22px;
 }
 
 .header-nav {
@@ -1271,11 +1258,18 @@ kbd {
  width: fit-content;
 }
 
-.disclaimer-title {
- font-size: 22px;
- font-weight: 600;
- color: var(--text-primary);
- margin-bottom: 4px;
+.disclaimer-header {
+ display: flex;
+ flex-direction: column;
+ align-items: flex-start;
+ gap: 12px;
+ padding-bottom: 8px;
+}
+
+.disclaimer-logo {
+ height: 36px;
+ width: auto;
+ object-fit: contain;
 }
 
 .disclaimer-body {
@@ -1304,20 +1298,19 @@ kbd {
 }
 
 .disclaimer-btn {
- padding: 11px 24px;
- background: var(--text-primary);
- color: var(--bg-primary);
+ background: #FF8A47;
+ color: #fff;
  border: none;
- border-radius: 999px;
+ border-radius: var(--radius-md);
+ padding: 10px 24px;
  font-size: 13px;
- font-weight: 500;
+ font-weight: 600;
  cursor: pointer;
- font-family: inherit;
- transition: opacity 0.15s ease;
+ transition: background 0.15s ease;
 }
 
 .disclaimer-btn:hover {
- opacity: 0.85;
+ background: #e57a3a;
 }
 
 /* ── Media Requirement ── */
@@ -2104,7 +2097,7 @@ kbd {
 .stage-info-valuation {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 0;
     padding: 10px 0;
     border-top: 0.5px solid var(--border-tertiary);
 }
@@ -2113,18 +2106,26 @@ kbd {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: background 0.12s ease;
+}
+
+.stage-info-val-row:hover {
+    background: rgba(0, 0, 0, 0.03);
 }
 
 .stage-info-val-label {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-tertiary);
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
 }
 
 .stage-info-val-value {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-primary);
     font-weight: 600;
+    font-variant-numeric: tabular-nums;
 }

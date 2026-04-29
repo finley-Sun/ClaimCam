@@ -304,34 +304,41 @@ function updateInfoCard(obj, viewerIsOpen = false) {
         policiesEl.parentNode.insertBefore(valuationEl, policiesEl.nextSibling);
     }
 
-    if (obj.receipt) {
-        valuationEl.innerHTML = `
-            <div class="stage-info-valuation-row">
-                <span class="stage-info-valuation-label">Receipt</span>
-                <span class="stage-info-valuation-value">
-                    🧾 ${obj.receipt.name || 'Attached'}
-                </span>
-            </div>
-        `;
-        valuationEl.style.display = 'flex';
-    } else if (obj.objectValue) {
-        valuationEl.innerHTML = `
-            <div class="stage-info-valuation-row">
-                <span class="stage-info-valuation-label">Value</span>
-                <span class="stage-info-valuation-value">
-                    €${Number(obj.objectValue).toLocaleString('en-GB',
-                        { minimumFractionDigits: 2 })}
-                </span>
-            </div>
-            ${obj.purchaseYear ? `
-            <div class="stage-info-valuation-row">
-                <span class="stage-info-valuation-label">Purchased</span>
-                <span class="stage-info-valuation-value">${obj.purchaseYear}</span>
-            </div>
-            ` : ''}
-        `;
+    if (obj.receipt || obj.objectValue) {
+        let rows = '';
+
+        if (obj.receipt) {
+            rows = `
+                <div class="stage-info-val-row">
+                    <span class="stage-info-val-label">Receipt</span>
+                    <span class="stage-info-val-value">
+                        ${obj.receipt.name || 'Attached'}
+                    </span>
+                </div>
+            `;
+        } else {
+            const formatted = Number(obj.objectValue).toLocaleString('en-GB', {
+                style: 'currency',
+                currency: 'EUR',
+            });
+            rows = `
+                <div class="stage-info-val-row">
+                    <span class="stage-info-val-label">Value</span>
+                    <span class="stage-info-val-value">${formatted}</span>
+                </div>
+                ${obj.purchaseYear ? `
+                <div class="stage-info-val-row">
+                    <span class="stage-info-val-label">Purchased</span>
+                    <span class="stage-info-val-value">${obj.purchaseYear}</span>
+                </div>
+                ` : ''}
+            `;
+        }
+
+        valuationEl.innerHTML = rows;
         valuationEl.style.display = 'flex';
     } else {
+        valuationEl.innerHTML = '';
         valuationEl.style.display = 'none';
     }
 
