@@ -13,6 +13,9 @@ const SPLAT_COUNTER =
 const SPLAT_HOUSE =
   'https://xmhfuitlwymxrgwo.public.blob.vercel-storage.com/gs_House.ply';
 
+const SPLAT_BURNED_HOUSE =
+  'https://xmhfuitlwymxrgwo.public.blob.vercel-storage.com/gs_BurnedHouse.ply';
+
 const SPLAT_TV =
   'https://xmhfuitlwymxrgwo.public.blob.vercel-storage.com/gs_Not_Broken_Television.ply';
 
@@ -29,6 +32,15 @@ const mockClaimTVBroken = new Claim({
   policyType: PolicyType.VANDALISM,
   media: [],
   damageSplatURL: SPLAT_TV_BROKEN,
+  creationTime: new Date('2025-04-20'),
+  status: ClaimStatus.PENDING,
+});
+const mockClaimBurnedHouse = new Claim({
+  id: 'claim-house-fire',
+  objectId: 'grandmas-house',
+  policyType: PolicyType.FIRE,
+  media: [],
+  damageSplatURL: SPLAT_BURNED_HOUSE,
   creationTime: new Date('2025-04-20'),
   status: ClaimStatus.PENDING,
 });
@@ -86,7 +98,7 @@ export const mockObjects = [
     splatURL: SPLAT_HOUSE,
     creationTime: new Date('2025-03-22'),
     media: [],
-    claims: [],
+    claims: [mockClaimBurnedHouse],
     receipt: null,
     objectValue: 1805000,
     purchaseYear: 1960,
