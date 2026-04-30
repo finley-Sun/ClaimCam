@@ -208,14 +208,14 @@ header {
 
 /* ── App Body ── */
 .app-body {
- display: flex;
- flex: 1;
- overflow: hidden;
- min-height: 0;
- padding: 16px;
- gap: 14px;
- background: var(--bg-page);
- height: 0;
+  display: flex;
+  flex: 1;
+  padding: 16px;
+  gap: 14px;
+  background: var(--bg-page);
+  /* Change height: 0 to this: */
+  height: calc(100vh - 60px); 
+  overflow: hidden;
 }
 
 /* ── Main Content ── */
@@ -229,28 +229,22 @@ header {
 
 /* ── Side Menu ── */
 .side-menu {
- width: 320px;
- height: 100%;
- display: flex;
- flex-direction: column;
- gap: 12px;
- flex-shrink: 0;
- overflow: hidden;
- min-height: 0;
+  width: 320px;
+  height: 100%; /* Important: Must fill the app-body */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+  overflow: hidden; /* Contains the internal panes */
 }
 
 #pane-dashboard {
- display: flex;
- flex-direction: column;
- gap: 12px;
- flex: 1;
- min-height: 0;
- overflow: hidden;
- height: 0;
-}
-
-.help-card {
- margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;    /* Force it to match the side-menu height */
+  min-height: 0;   /* Allows children to shrink */
+  overflow: hidden; /* Ensures nothing leaks out */
 }
 
 .side-menu::-webkit-scrollbar {
@@ -279,6 +273,7 @@ header {
  display: flex;
  align-items: center;
  gap: 14px;
+ flex-shrink: 0;
 }
 
 .weather-icon {
@@ -300,15 +295,15 @@ header {
 
 /* ── Archive Card ── */
 .archive-card {
- background: var(--bg-primary);
- border: 0.5px solid var(--border-tertiary);
- border-radius: var(--radius-lg);
- padding: 16px;
- flex: 1;
- display: flex;
- flex-direction: column;
- min-height: 0;
- overflow: hidden;
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border-tertiary);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  flex: 1 1 180px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;    /* Critical: allows flex children to calculate height */
+  overflow: hidden; /* Contains the scrollable list */
 }
 
 .archive-header {
@@ -316,6 +311,7 @@ header {
  align-items: center;
  justify-content: space-between;
  margin-bottom: 12px;
+ flex-shrink: 0;
 }
 
 .archive-title {
@@ -360,6 +356,7 @@ header {
  color: var(--text-primary);
  margin-bottom: 12px;
  font-family: inherit;
+ flex-shrink: 0;
 }
 
 .cc-search:focus {
@@ -375,6 +372,7 @@ header {
  padding: 3px;
  background: var(--bg-secondary);
  border-radius: var(--radius-md);
+ flex-shrink: 0;
  margin-bottom: 14px;
 }
 
@@ -398,11 +396,12 @@ header {
 
 /* ── Scan List ── */
 .cc-list {
- flex: 1;
- overflow-y: auto;
- padding-right: 4px;
- min-height: 0;
- height: 0;
+  flex: 1;            /* Takes all remaining space inside archive-card */
+  overflow-y: auto;   /* Enables vertical scrolling */
+  overflow-x: hidden; /* Prevent horizontal overflow */
+  padding-right: 4px;
+  min-height: 0;      /* Allows list to shrink */
+  max-height: 250px;
 }
 
 .cc-list::-webkit-scrollbar {
@@ -429,6 +428,7 @@ header {
  align-items: center;
  border: 0.5px solid transparent;
  transition: all 0.15s ease;
+ min-width: 0;       /* Allows flex children to shrink below content size */
 }
 
 .cc-item:hover {
@@ -466,7 +466,8 @@ header {
 
 .cc-item-body {
  flex: 1;
- min-width: 0;
+ min-width: 0;      /* Allows children to shrink below content size */
+ overflow: hidden;  /* Prevents content from overflowing */
 }
 
 .cc-item-name {
@@ -497,17 +498,18 @@ header {
  background: var(--text-tertiary);
 }
 
-/* ── Help Card ── */
 .help-card {
- background: var(--bg-primary);
- border: 0.5px solid var(--border-tertiary);
- border-radius: var(--radius-lg);
- padding: 14px 16px;
- display: flex;
- align-items: center;
- gap: 12px;
- cursor: pointer;
- transition: background 0.15s ease;
+    background: var(--bg-primary);
+    border: 0.5px solid var(--border-tertiary);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    flex-shrink: 0;
+    margin-top: auto;
 }
 
 .help-card:hover {
@@ -1377,9 +1379,10 @@ kbd {
 
 /* ── Claim Bar ── */
 .cc-claim-bar {
- padding-top: 10px;
- border-top: 0.5px solid var(--border-tertiary);
- flex-shrink: 0;
+    padding-top: 10px;
+    border-top: 0.5px solid var(--border-tertiary);
+    flex-shrink: 0;
+    min-height: 0;
 }
 
 .cc-claim-btn {
@@ -1479,6 +1482,7 @@ kbd {
  display: flex;
  flex-wrap: wrap;
  gap: 4px;
+ overflow: hidden;  /* Ensures chips don't overflow the body */
  margin-top: 2px;
 }
 
