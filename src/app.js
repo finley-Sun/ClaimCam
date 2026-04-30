@@ -67,7 +67,7 @@ splatSelectorSelect.addEventListener('change', async () => {
     } catch (e) {
         showErrorToast(
             'Reconstruction unavailable',
-            'WebGL context could not be created. Close other tabs or reload the page.'
+            'WebGL context could not be created. Close other tabs or reload the page, if it still doesn\'t work restart the browser.'
         );
     }
     loadingOverlay.classList.remove('visible');

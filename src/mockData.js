@@ -10,6 +10,9 @@ const SPLAT_BICYCLE =
 const SPLAT_COUNTER =
   'https://huggingface.co/datasets/dylanebert/3dgs/resolve/main/counter/counter-7k.splat';
 
+const SPLAT_HOUSE =
+  'https://lumalabs.ai/embed/f1eeff84-9ba5-41dc-8a6d-d23b10ccb3f0?mode=sparkles&background=%23ffffff&color=%23000000&showTitle=true&loadBg=true&logoPosition=bottom-left&infoPosition=bottom-right&cinematicVideo=undefined&showMenu=false';
+
 // ── Mock claims for Living Room ──
 const mockClaimLivingRoom1 = new Claim({
   id: 'claim-living-room-1',
@@ -47,18 +50,18 @@ export const mockObjects = [
         purchaseYear: 2021,
     }),
     new InsuredObject({
-        id: 'living-room',
-        title: 'Living Room',
+        id: 'Grandma\'s House',
+        title: 'Grandma\'s House',
         image: null,
         type: ObjectType.BUILDING,
         policies: [PolicyType.FIRE, PolicyType.WATER, PolicyType.NATURAL_DISASTER],
-        splatURL: SPLAT_BONSAI,
+        splatURL: SPLAT_HOUSE,
         creationTime: new Date('2025-03-22'),
         media: [],
-        claims: [mockClaimLivingRoom1, mockClaimLivingRoom2],
+        claims: [],
         receipt: null,
-        objectValue: 185000,
-        purchaseYear: 2018,
+        objectValue: 1805000,
+        purchaseYear: 1960,
     }),
     new InsuredObject({
         id: 'kitchen',
