@@ -15,6 +15,8 @@ UI is defined in `ui/welcome.uikitml`; the Vite UIKitML plugin compiles it to `p
 
 ## How to Run the Project
 
+VISIT THE WEBSITE HERE: [ClaimCam](https://claim-cam.vercel.app)
+
 ### 1. Start the Development Server
 
 ```bash
