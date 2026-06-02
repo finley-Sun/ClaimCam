@@ -181,7 +181,7 @@ function initArchive() {
 // ── loadScan ──
 function loadScan(obj) {
     currentObj = obj;
-
+    if (gsViewer) gsViewer.pause(); 
     gsViewer.hide();
     closeBtn.style.display = 'none';
     infoBtn.style.display = 'none';

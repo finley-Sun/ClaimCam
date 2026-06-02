@@ -4,12 +4,12 @@ import { createSystem } from '@iwsdk/core';
 export class XRSplatLoader {
 
     constructor({ scene, camera, renderer }) {
-        this.scene = scene;
-        this.camera = camera;
+        this.scene    = scene;
+        this.camera   = camera;
         this.renderer = renderer;
-        this.viewer = null;
+        this.viewer   = null;
         this.splatMesh = null;
-        this.ready = false;
+        this.ready    = false;
     }
 
     async load(url) {
@@ -19,28 +19,21 @@ export class XRSplatLoader {
 
         this.ready = false;
 
-        const offscreen = document.createElement('canvas');
-        offscreen.width = 1;
-        offscreen.height = 1;
-        offscreen.style.display = 'none';
-        document.body.appendChild(offscreen);
-        this._offscreen = offscreen;
-
         this.viewer = new GaussianSplats3D.Viewer({
-            selfDrivenMode: false,
-            useBuiltInControls: false,
+            selfDrivenMode:         false,
+            useBuiltInControls:     false,
             sharedMemoryForWorkers: false,
-            gpuAcceleratedSort: false,
-            renderer: this.renderer,
-            camera: this.camera,
-            scene: this.scene,
+            gpuAcceleratedSort:     false,
+            renderer:               this.renderer,
+            camera:                 this.camera,
+            scene:                  this.scene,
         });
 
         await this.viewer.addSplatScene(url, {
             splatAlphaRemovalThreshold: 5,
             position: [0, 1.2, -2],
             rotation: [1, 0, 0, 0],
-            scale: [1, 1, 1]
+            scale:    [1, 1, 1],
         });
 
         this.splatMesh = this.viewer.splatMesh;
@@ -56,13 +49,17 @@ export class XRSplatLoader {
         console.log('[XRSplatLoader] splatMesh injected into IWSDK scene:', this.splatMesh);
     }
 
+    // Called once per frame by the IWSDK system.
+    // Only CPU work here — sorting + buffer upload.
+    // IWSDK owns the actual renderer.render() call.
     update() {
         if (!this.viewer || !this.ready) return;
         try {
             this.viewer.update();
-            this.viewer.render();
+            // *** Do NOT call this.viewer.render() here. ***
+            // IWSDK will render the scene (including splatMesh) itself.
         } catch (e) {
-            // Suppress render errors during XR frame transitions
+            // suppress transient XR frame errors
         }
     }
 
@@ -76,14 +73,30 @@ export class XRSplatLoader {
             try { this.viewer.dispose(); } catch (e) {}
             this.viewer = null;
         }
-        if (this._offscreen) {
-            this._offscreen.remove();
-            this._offscreen = null;
-        }
     }
 
     dispose() {
         this._dispose();
+    }
+
+    pause() {
+        this.ready = false;
+    }
+
+    resume() {
+        if (this.viewer && this.splatMesh) this.ready = true;
+    }
+
+    async swap(url) {
+        this.pause();
+        await this.viewer.removeSplatScene(0);
+        await this.viewer.addSplatScene(url, {
+            splatAlphaRemovalThreshold: 5,
+            position: [0, 1.2, -2],
+            rotation: [1, 0, 0, 0],
+            scale: [1, 1, 1],
+        });
+        this.resume();
     }
 }
 

@@ -63,8 +63,6 @@ export async function initXR(splatUrl) {
     scene.environment = null;
     scene.fog = null;
 
-    renderer.autoClear = false;
-
     camera.position.set(0, 1.6, 3);
     camera.lookAt(0, 1.2, -2);
 
