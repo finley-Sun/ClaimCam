@@ -62,15 +62,19 @@ splatSelectorSelect.addEventListener('change', async () => {
     if (!url) return;
     currentSplatUrl = url;
     loadingOverlay.classList.add('visible');
+    lockList();
+
     try {
-        await gsViewer.load(url);
+        await gsViewer.swap(url);
     } catch (e) {
         showErrorToast(
             'Reconstruction unavailable',
             'WebGL context could not be created. Close other tabs or reload the page, if it still doesn\'t work restart the browser.'
         );
     }
+
     loadingOverlay.classList.remove('visible');
+    unlockList();
 });
 
 // ── Initial state ──
@@ -242,27 +246,30 @@ function _rebuildSelector(obj) {
 // ── bindGsViewer ──
 function bindGsViewer() {
  seeReconBtn.addEventListener('click', async () => {
- seeReconBtn.style.display = 'none';
- loadingOverlay.classList.add('visible');
+        seeReconBtn.style.display = 'none';
+        loadingOverlay.classList.add('visible');
+        lockList();    // <-- add
 
- try {
- await gsViewer.load(currentObj.splatURL);
- loadingOverlay.classList.remove('visible');
- closeBtn.style.display = 'block';
- infoBtn.style.display = 'flex';
- xrBtn.style.display = 'flex';
- xrBtn.disabled = false;
- _rebuildSelector(currentObj);
- updateInfoCard(currentObj, true);
- } catch (e) {
- loadingOverlay.classList.remove('visible');
- seeReconBtn.style.display = 'flex';
- showErrorToast(
- 'Reconstruction unavailable',
- 'WebGL context could not be created. Too many renderers are open — close other tabs or reload the page.'
- );
- }
- });
+        try {
+            await gsViewer.load(currentObj.splatURL);
+            loadingOverlay.classList.remove('visible');
+            unlockList();    // <-- add
+            closeBtn.style.display = 'block';
+            infoBtn.style.display = 'flex';
+            xrBtn.style.display = 'flex';
+            xrBtn.disabled = false;
+            _rebuildSelector(currentObj);
+            updateInfoCard(currentObj, true);
+        } catch (e) {
+            loadingOverlay.classList.remove('visible');
+            unlockList();    // <-- add
+            seeReconBtn.style.display = 'flex';
+            showErrorToast(
+                'Reconstruction unavailable',
+                'WebGL context could not be created. Too many renderers are open — close other tabs or reload the page.'
+            );
+        }
+    });
 }
 
 // ── updateInfoCard ──
@@ -517,6 +524,13 @@ function _teardownViewer() {
   infoPanel.style.display = 'none';
   xrBtn.style.display = 'none';
   splatSelectorBar.style.display = 'none';
+}
+
+function lockList() {
+    document.getElementById('cc-list').classList.add('list-locked');
+}
+function unlockList() {
+    document.getElementById('cc-list').classList.remove('list-locked');
 }
 
 export { loadScan };

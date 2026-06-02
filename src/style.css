@@ -2133,3 +2133,9 @@ kbd {
     font-weight: 600;
     font-variant-numeric: tabular-nums;
 }
+
+#cc-list.list-locked {
+    pointer-events: none;
+    opacity: 0.4;
+    transition: opacity 0.2s ease;
+}
