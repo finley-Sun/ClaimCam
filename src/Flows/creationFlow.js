@@ -598,7 +598,7 @@ _mediaScore() {
     done.style.display = 'flex';
 
     this.draft.splatURL =
-      'https://huggingface.co/datasets/dylanebert/3dgs/resolve/main/bonsai/bonsai-7k.splat';
+      '/CozyLivingRoomEntertainment_Setup.spz';
 
     footer.innerHTML = `
       <button class="cf-btn-primary" id="cf-finish">

@@ -419,7 +419,7 @@ export class ClaimFlow {
     }
 
     this.draft.damageSplatURL =
-      'https://huggingface.co/datasets/dylanebert/3dgs/resolve/main/bonsai/bonsai-7k.splat';
+      '/FireDamagedApartment_Interior.spz';
 
     loading.style.display = 'none';
     done.style.display = 'flex';
