@@ -1,4 +1,4 @@
-import { initXR, initGaussian } from './index.js';
+import { initXR, initGaussian, captureXRSessionRequest, hasActiveXRSession, exitXRSession } from './index.js';
 import { VisibilityState } from '@iwsdk/core';
 import { ArchiveList } from './archiveList.js';
 import { mockObjects } from './mockData.js';
@@ -392,51 +392,82 @@ function updateInfoCard(obj, viewerIsOpen = false) {
 }
 
 // ── XR Toggle ──
+let xrVisibilityBound = false;
+
+function resetXRButton() {
+    xrBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <rect x="2" y="7" width="20" height="11" rx="3"/>
+            <circle cx="8" cy="13" r="1.5"/>
+            <circle cx="16" cy="13" r="1.5"/>
+        </svg>
+        Enter XR
+    `;
+    xrBtn.disabled = false;
+}
+
 xrBtn.addEventListener('click', async () => {
-    xrBtn.textContent = 'Loading XR...';
-    xrBtn.disabled = true;
+  if (hasActiveXRSession()) {
+    exitXRSession();
+    return;
+  }
 
-    if (gsViewer) {
-        gsViewer.setXRActive(true);
-        gsViewer.destroyForXR();
-    }
+  // Must request the XR session synchronously on user gesture (required on Quest browser).
+  captureXRSessionRequest();
 
-    closeBtn.style.display = 'none';
-    infoBtn.style.display = 'none';
-    infoPanel.style.display = 'none';
-    splatSelectorBar.style.display = 'none';
+  xrBtn.textContent = 'Loading XR...';
+  xrBtn.disabled = true;
 
-    // Use currentSplatUrl — respects the dropdown selection
+  if (gsViewer) {
+    gsViewer.setXRActive(true);
+    gsViewer.destroyForXR();
+  }
+
+  closeBtn.style.display = 'none';
+  infoBtn.style.display = 'none';
+  infoPanel.style.display = 'none';
+  splatSelectorBar.style.display = 'none';
+
+  try {
     const world = await initXR(currentSplatUrl);
 
-    if (world) {
-        world.visibilityState.subscribe((state) => {
-            if (state === VisibilityState.NonImmersive) {
-                xrBtn.innerHTML = `
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                    <rect x="2" y="7" width="20" height="11" rx="3"/>
-                    <circle cx="8" cy="13" r="1.5"/>
-                    <circle cx="16" cy="13" r="1.5"/>
-                </svg>
-                Enter XR
-                `;
-                xrBtn.disabled = false;
-                sceneContainer.style.display = 'none';
-                if (currentSplatUrl) {
-                    gsViewer.load(currentSplatUrl).then(() => {
-                        closeBtn.style.display = 'block';
-                        infoBtn.style.display = 'flex';
-                        _rebuildSelector(currentObj);
-                        updateInfoCard(currentObj, true);
-                    });
-                }
-            } else {
-                xrBtn.innerHTML = 'Exit to Browser';
-                xrBtn.disabled = false;
-                if (gsViewer) gsViewer.hide();
-            }
-        });
+    if (world && !xrVisibilityBound) {
+      xrVisibilityBound = true;
+      world.visibilityState.subscribe((state) => {
+        if (state === VisibilityState.NonImmersive) {
+          resetXRButton();
+          sceneContainer.style.display = 'none';
+          if (currentSplatUrl) {
+            gsViewer.load(currentSplatUrl).then(() => {
+              closeBtn.style.display = 'block';
+              infoBtn.style.display = 'flex';
+              _rebuildSelector(currentObj);
+              updateInfoCard(currentObj, true);
+            });
+          }
+        } else {
+          xrBtn.innerHTML = 'Exit to Browser';
+          xrBtn.disabled = false;
+          if (gsViewer) gsViewer.hide();
+        }
+      });
     }
+  } catch (err) {
+    console.error('[XR] Failed to enter immersive mode:', err);
+    resetXRButton();
+    sceneContainer.style.display = 'none';
+    showErrorToast(
+      'XR unavailable',
+      'Could not start immersive mode. Make sure you are using HTTPS and try again.'
+    );
+    if (currentSplatUrl && gsViewer) {
+      await gsViewer.load(currentSplatUrl);
+      closeBtn.style.display = 'block';
+      infoBtn.style.display = 'flex';
+      _rebuildSelector(currentObj);
+      updateInfoCard(currentObj, true);
+    }
+  }
 });
 
 // ── Profile Dropdown ──

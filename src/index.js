@@ -3,7 +3,11 @@ import {
     SessionMode,
     AssetManager,
     World,
-    Color
+    Color,
+    ReferenceSpaceType,
+    buildSessionInit,
+    normalizeReferenceSpec,
+    resolveReferenceSpaceType,
 } from '@iwsdk/core';
 
 import { EnvironmentType, LocomotionEnvironment } from '@iwsdk/core';
@@ -18,15 +22,93 @@ const assets = {
     },
 };
 
+const xrDefaults = {
+    sessionMode: SessionMode.ImmersiveVR,
+    referenceSpace: ReferenceSpaceType.LocalFloor,
+    features: { handTracking: true, layers: true },
+};
+
 let worldInstance = null;
 let xrSplatLoader = null;
+let pendingSessionPromise = null;
+
+/**
+ * Call synchronously from a user click/tap before any await.
+ * WebXR requires requestSession to run while user activation is active (Quest browser).
+ */
+export function captureXRSessionRequest() {
+    if (worldInstance?.session || pendingSessionPromise) {
+        return pendingSessionPromise;
+    }
+
+    const opts = worldInstance?.xrDefaults ?? xrDefaults;
+    const sessionMode = opts.sessionMode ?? SessionMode.ImmersiveVR;
+    const sessionOptions = buildSessionInit(opts);
+
+    pendingSessionPromise = navigator.xr?.requestSession(sessionMode, sessionOptions) ?? null;
+    return pendingSessionPromise;
+}
+
+async function bindPendingXRSession(world) {
+    if (world.session) {
+        return;
+    }
+
+    const refSpec = normalizeReferenceSpec(world.xrDefaults?.referenceSpace ?? xrDefaults.referenceSpace);
+
+    const onSessionStart = async (session) => {
+        const onSessionEnd = () => {
+            session.removeEventListener('end', onSessionEnd);
+            world.session = undefined;
+        };
+
+        session.addEventListener('end', onSessionEnd);
+
+        try {
+            const resolvedType = await resolveReferenceSpaceType(
+                session,
+                refSpec.type,
+                refSpec.required ? [] : refSpec.fallbackOrder
+            );
+            world.renderer.xr.getDepthSensingMesh = function () {
+                return null;
+            };
+            world.renderer.xr.setReferenceSpaceType(resolvedType);
+            await world.renderer.xr.setSession(session);
+            world.session = session;
+        } catch (err) {
+            console.error('[XR] Failed to acquire reference space:', err);
+            try {
+                await session.end();
+            } catch (_e) {}
+            throw err;
+        }
+    };
+
+    if (pendingSessionPromise) {
+        try {
+            const session = await pendingSessionPromise;
+            pendingSessionPromise = null;
+            if (session) {
+                await onSessionStart(session);
+            }
+        } catch (err) {
+            pendingSessionPromise = null;
+            throw err;
+        }
+        return;
+    }
+
+    // Desktop emulation fallback when captureXRSessionRequest was not used.
+    world.launchXR();
+}
 
 export async function initXR(splatUrl) {
     if (worldInstance) {
         if (splatUrl && xrSplatLoader) {
             await xrSplatLoader.load(splatUrl);
         }
-        worldInstance.launchXR();
+        await bindPendingXRSession(worldInstance);
         return worldInstance;
     }
 
@@ -37,7 +119,8 @@ export async function initXR(splatUrl) {
         assets,
         xr: {
             sessionMode: SessionMode.ImmersiveVR,
-            offer: 'never',
+            referenceSpace: ReferenceSpaceType.LocalFloor,
+            offer: 'none',
             features: { handTracking: true, layers: true }
         },
         features: {
@@ -87,9 +170,17 @@ export async function initXR(splatUrl) {
     const XRSplatSystem = createXRSplatSystem(xrSplatLoader);
     world.registerSystem(XRSplatSystem);
 
-    world.launchXR();
+    await bindPendingXRSession(world);
 
     return world;
+}
+
+export function hasActiveXRSession() {
+    return !!worldInstance?.session;
+}
+
+export function exitXRSession() {
+    worldInstance?.exitXR();
 }
 
 export function initGaussian() {
