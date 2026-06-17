@@ -3,7 +3,8 @@ import {
     SessionMode,
     AssetManager,
     World,
-    Color,
+    VisibilityState,
+    Clock,
     ReferenceSpaceType,
     buildSessionInit,
     normalizeReferenceSpec,
@@ -12,7 +13,7 @@ import {
 
 import { EnvironmentType, LocomotionEnvironment } from '@iwsdk/core';
 import { GaussianSplatViewer } from './SplatManagement/gaussianSplat.js';
-import { XRSplatLoader, createXRSplatSystem, SPLAT_XR_POSITION } from './SplatManagement/xrSplatSystem.js';
+import { XRSplatLoader, createXRSplatSystem } from './SplatManagement/xrSplatSystem.js';
 
 const assets = {
     environmentDesk: {
@@ -32,12 +33,23 @@ let worldInstance = null;
 let xrSplatLoader = null;
 let pendingSessionPromise = null;
 
-function positionPlayerForSplat(world) {
-    const player = world.player;
-    if (!player) return;
-    player.position.set(0, 0, 1.8);
-    player.rotation.set(0, 0, 0);
-    player.lookAt(0, SPLAT_XR_POSITION[1], SPLAT_XR_POSITION[2]);
+/**
+ * IWSDK runs ECS systems, then renderer.render(). Gaussian splats need a custom
+ * render pass after the main scene draw or the splats get cleared each frame.
+ */
+function installSplatRenderHook(world, splatLoader) {
+    const renderer = world.renderer;
+    const clock = new Clock();
+
+    renderer.setAnimationLoop(() => {
+        const delta = clock.getDelta();
+        const elapsedTime = clock.elapsedTime;
+        world.visibilityState.value =
+            world.session?.visibilityState ?? VisibilityState.NonImmersive;
+        world.update(delta, elapsedTime);
+        renderer.render(world.scene, world.camera);
+        splatLoader.render();
+    });
 }
 
 /**
@@ -84,7 +96,6 @@ async function bindPendingXRSession(world) {
             world.renderer.xr.setReferenceSpaceType(resolvedType);
             await world.renderer.xr.setSession(session);
             world.session = session;
-            positionPlayerForSplat(world);
         } catch (err) {
             console.error('[XR] Failed to acquire reference space:', err);
             try {
@@ -108,16 +119,18 @@ async function bindPendingXRSession(world) {
         return;
     }
 
-    // Desktop emulation fallback when captureXRSessionRequest was not used.
     world.launchXR();
 }
 
-export async function initXR(splatUrl) {
+/**
+ * Create the IWSDK world and load the splat scene without entering XR.
+ * Call while the 2D viewer is active so Enter XR can start immediately on click.
+ */
+export async function prepareXRWorld(splatUrl) {
     if (worldInstance) {
         if (splatUrl && xrSplatLoader) {
             await xrSplatLoader.load(splatUrl);
         }
-        await bindPendingXRSession(worldInstance);
         return worldInstance;
     }
 
@@ -125,9 +138,6 @@ export async function initXR(splatUrl) {
     sceneContainer.style.display = 'block';
 
     const world = await World.create(sceneContainer, {
-        render: {
-            defaultLighting: false,
-        },
         assets,
         xr: {
             sessionMode: SessionMode.ImmersiveVR,
@@ -137,11 +147,7 @@ export async function initXR(splatUrl) {
         },
         features: {
             locomotion: {
-            useWorker: true,
-            gravity: false,
-            enableGravity: false,
-            gravityEnabled: false,
-            initialPlayerPosition: [0, 0, 1.8],
+                useWorker: true,
             },
             grabbing: false,
             physics: false,
@@ -152,20 +158,8 @@ export async function initXR(splatUrl) {
 
     worldInstance = world;
 
-    const { camera, scene, renderer } = world;
+    const { scene, camera, renderer } = world;
 
-    // Strip default IWSDK environment
-    scene.background = new Color(0x000000);
-    scene.environment = null;
-    scene.fog = null;
-
-    // Camera is parented to the XR player rig — keep local origin at the headset anchor.
-    camera.position.set(0, 0, 0);
-    camera.rotation.set(0, 0, 0);
-
-    positionPlayerForSplat(world);
-
-    // Minimal floor for locomotion only
     const { scene: envMesh } = AssetManager.getGLTF('environmentDesk');
     envMesh.visible = false;
     envMesh.rotateY(Math.PI);
@@ -178,14 +172,19 @@ export async function initXR(splatUrl) {
 
     if (splatUrl) {
         await xrSplatLoader.load(splatUrl);
-        console.log('[initXR] scene children after splat load:', scene.children.length);
+        console.log('[prepareXRWorld] splat loaded, scene children:', scene.children.length);
     }
 
     const XRSplatSystem = createXRSplatSystem(xrSplatLoader);
     world.registerSystem(XRSplatSystem);
+    installSplatRenderHook(world, xrSplatLoader);
 
+    return world;
+}
+
+export async function initXR(splatUrl) {
+    const world = await prepareXRWorld(splatUrl);
     await bindPendingXRSession(world);
-
     return world;
 }
 

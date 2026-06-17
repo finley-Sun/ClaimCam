@@ -1,4 +1,4 @@
-import { initXR, initGaussian, captureXRSessionRequest, hasActiveXRSession, exitXRSession } from './index.js';
+import { initXR, initGaussian, prepareXRWorld, captureXRSessionRequest, hasActiveXRSession, exitXRSession } from './index.js';
 import { VisibilityState } from '@iwsdk/core';
 import { ArchiveList } from './archiveList.js';
 import { mockObjects } from './mockData.js';
@@ -64,6 +64,9 @@ splatSelectorSelect.addEventListener('change', async () => {
     loadingOverlay.classList.add('visible');
     try {
         await gsViewer.load(url);
+        await prepareXRWorld(url).catch((err) => {
+            console.warn('[XR] splat reload for XR failed:', err);
+        });
     } catch (e) {
         showErrorToast(
             'Reconstruction unavailable',
@@ -247,6 +250,9 @@ function bindGsViewer() {
 
  try {
  await gsViewer.load(currentObj.splatURL);
+ await prepareXRWorld(currentObj.splatURL).catch((err) => {
+   console.warn('[XR] background world prep failed:', err);
+ });
  loadingOverlay.classList.remove('visible');
  closeBtn.style.display = 'block';
  infoBtn.style.display = 'flex';

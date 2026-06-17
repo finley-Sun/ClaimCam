@@ -1,7 +1,8 @@
 import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 import { createSystem } from '@iwsdk/core';
 
-export const SPLAT_XR_POSITION = [0, 1.2, -2];
+// Match the 2D viewer placement, shifted in front of the IWSDK player origin.
+export const SPLAT_XR_POSITION = [0, 1.0, -2];
 
 export class XRSplatLoader {
 
@@ -58,26 +59,32 @@ export class XRSplatLoader {
             return;
         }
 
-        this.scene.add(this.splatMesh);
+        // Keep splat out of the IWSDK scene graph — it is drawn in render() via a custom pass.
         this.ready = true;
-
-        console.log('[XRSplatLoader] splatMesh injected into IWSDK scene:', this.splatMesh);
+        console.log('[XRSplatLoader] splat ready for XR');
     }
 
-    update() {
+    tick() {
         if (!this.viewer || !this.ready) return;
         try {
             this.viewer.update();
+        } catch (e) {
+            // Suppress errors during XR frame transitions
+        }
+    }
+
+    render() {
+        if (!this.viewer || !this.ready) return;
+        try {
             this.viewer.render();
         } catch (e) {
-            // Suppress render errors during XR frame transitions
+            // Suppress errors during XR frame transitions
         }
     }
 
     _dispose() {
         this.ready = false;
         if (this.splatMesh) {
-            this.scene.remove(this.splatMesh);
             this.splatMesh = null;
         }
         if (this.viewer) {
@@ -96,7 +103,7 @@ export class XRSplatLoader {
 export function createXRSplatSystem(xrSplatLoader) {
     return class XRSplatSystem extends createSystem({}) {
         update() {
-            xrSplatLoader.update();
+            xrSplatLoader.tick();
         }
     };
 }
