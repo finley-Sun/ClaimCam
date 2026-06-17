@@ -1,6 +1,8 @@
 import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 import { createSystem } from '@iwsdk/core';
 
+export const SPLAT_XR_POSITION = [0, 1.2, -2];
+
 export class XRSplatLoader {
 
     constructor({ scene, camera, renderer }) {
@@ -10,6 +12,14 @@ export class XRSplatLoader {
         this.viewer = null;
         this.splatMesh = null;
         this.ready = false;
+        this._onXRSessionStart = () => {
+            if (this.viewer) this.viewer.webXRActive = true;
+        };
+        this._onXRSessionEnd = () => {
+            if (this.viewer) this.viewer.webXRActive = false;
+        };
+        this.renderer.xr.addEventListener('sessionstart', this._onXRSessionStart);
+        this.renderer.xr.addEventListener('sessionend', this._onXRSessionEnd);
     }
 
     async load(url) {
@@ -19,26 +29,24 @@ export class XRSplatLoader {
 
         this.ready = false;
 
-        const offscreen = document.createElement('canvas');
-        offscreen.width = 1;
-        offscreen.height = 1;
-        offscreen.style.display = 'none';
-        document.body.appendChild(offscreen);
-        this._offscreen = offscreen;
-
         this.viewer = new GaussianSplats3D.Viewer({
+            dropInMode: true,
             selfDrivenMode: false,
             useBuiltInControls: false,
             sharedMemoryForWorkers: false,
             gpuAcceleratedSort: false,
             renderer: this.renderer,
             camera: this.camera,
-            scene: this.scene,
+            threeScene: this.scene,
+            sceneRevealMode: GaussianSplats3D.SceneRevealMode.Instant,
         });
+        this.viewer.init();
+        this.viewer.webXRActive = this.renderer.xr.isPresenting;
 
         await this.viewer.addSplatScene(url, {
+            showLoadingUI: false,
             splatAlphaRemovalThreshold: 5,
-            position: [0, 1.2, -2],
+            position: SPLAT_XR_POSITION,
             rotation: [1, 0, 0, 0],
             scale: [1, 1, 1]
         });
@@ -76,13 +84,11 @@ export class XRSplatLoader {
             try { this.viewer.dispose(); } catch (e) {}
             this.viewer = null;
         }
-        if (this._offscreen) {
-            this._offscreen.remove();
-            this._offscreen = null;
-        }
     }
 
     dispose() {
+        this.renderer.xr.removeEventListener('sessionstart', this._onXRSessionStart);
+        this.renderer.xr.removeEventListener('sessionend', this._onXRSessionEnd);
         this._dispose();
     }
 }

@@ -12,7 +12,7 @@ import {
 
 import { EnvironmentType, LocomotionEnvironment } from '@iwsdk/core';
 import { GaussianSplatViewer } from './SplatManagement/gaussianSplat.js';
-import { XRSplatLoader, createXRSplatSystem } from './SplatManagement/xrSplatSystem.js';
+import { XRSplatLoader, createXRSplatSystem, SPLAT_XR_POSITION } from './SplatManagement/xrSplatSystem.js';
 
 const assets = {
     environmentDesk: {
@@ -31,6 +31,14 @@ const xrDefaults = {
 let worldInstance = null;
 let xrSplatLoader = null;
 let pendingSessionPromise = null;
+
+function positionPlayerForSplat(world) {
+    const player = world.player;
+    if (!player) return;
+    player.position.set(0, 0, 1.8);
+    player.rotation.set(0, 0, 0);
+    player.lookAt(0, SPLAT_XR_POSITION[1], SPLAT_XR_POSITION[2]);
+}
 
 /**
  * Call synchronously from a user click/tap before any await.
@@ -76,6 +84,7 @@ async function bindPendingXRSession(world) {
             world.renderer.xr.setReferenceSpaceType(resolvedType);
             await world.renderer.xr.setSession(session);
             world.session = session;
+            positionPlayerForSplat(world);
         } catch (err) {
             console.error('[XR] Failed to acquire reference space:', err);
             try {
@@ -116,6 +125,9 @@ export async function initXR(splatUrl) {
     sceneContainer.style.display = 'block';
 
     const world = await World.create(sceneContainer, {
+        render: {
+            defaultLighting: false,
+        },
         assets,
         xr: {
             sessionMode: SessionMode.ImmersiveVR,
@@ -129,6 +141,7 @@ export async function initXR(splatUrl) {
             gravity: false,
             enableGravity: false,
             gravityEnabled: false,
+            initialPlayerPosition: [0, 0, 1.8],
             },
             grabbing: false,
             physics: false,
@@ -146,10 +159,11 @@ export async function initXR(splatUrl) {
     scene.environment = null;
     scene.fog = null;
 
-    renderer.autoClear = false;
+    // Camera is parented to the XR player rig — keep local origin at the headset anchor.
+    camera.position.set(0, 0, 0);
+    camera.rotation.set(0, 0, 0);
 
-    camera.position.set(0, 1.6, 3);
-    camera.lookAt(0, 1.2, -2);
+    positionPlayerForSplat(world);
 
     // Minimal floor for locomotion only
     const { scene: envMesh } = AssetManager.getGLTF('environmentDesk');
