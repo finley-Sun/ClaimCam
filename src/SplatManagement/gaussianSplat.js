@@ -80,6 +80,7 @@ export class GaussianSplatViewer {
       });
 
       this.viewer.start();
+      this.viewer.renderer.setClearColor(0xe2edd8, 1);
       console.log('[GaussianSplat] loaded:', url);
     } catch (e) {
       console.error('[GaussianSplat] load failed:', e);

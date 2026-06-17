@@ -13,7 +13,7 @@ import {
 
 import { EnvironmentType, LocomotionEnvironment, DomeGradient, IBLGradient } from '@iwsdk/core';
 import { GaussianSplatViewer } from './SplatManagement/gaussianSplat.js';
-import { XRSplatLoader, createXRSplatSystem } from './SplatManagement/xrSplatSystem.js';
+import { XRSplatLoader } from './SplatManagement/xrSplatSystem.js';
 
 const assets = {
     environmentDesk: {
@@ -43,8 +43,14 @@ function applyMatchaBackground(world) {
     const root = world.activeLevel?.value;
     if (!root) return;
 
+    if (!root.hasComponent(DomeGradient)) {
+        root.addComponent(DomeGradient);
+    }
+    if (!root.hasComponent(IBLGradient)) {
+        root.addComponent(IBLGradient);
+    }
+
     for (const component of [DomeGradient, IBLGradient]) {
-        if (!root.hasComponent(component)) continue;
         root.setValue(component, 'sky', MATCHA_GRADIENT.sky);
         root.setValue(component, 'equator', MATCHA_GRADIENT.equator);
         root.setValue(component, 'ground', MATCHA_GRADIENT.ground);
@@ -52,22 +58,25 @@ function applyMatchaBackground(world) {
     }
 }
 
+function scheduleMatchaBackground(world) {
+    applyMatchaBackground(world);
+    requestAnimationFrame(() => applyMatchaBackground(world));
+}
+
 /**
- * IWSDK runs ECS systems, then renderer.render(). Gaussian splats need a custom
- * render pass after the main scene draw or the splats get cleared each frame.
+ * IWSDK render loop — splats render inside the scene via DropInViewer.onBeforeRender.
  */
-function installSplatRenderHook(world, splatLoader) {
+function installRenderLoop(world) {
     const renderer = world.renderer;
     const clock = new Clock();
 
-    renderer.setAnimationLoop(() => {
+    renderer.setAnimationLoop((time, xrFrame) => {
         const delta = clock.getDelta();
         const elapsedTime = clock.elapsedTime;
         world.visibilityState.value =
             world.session?.visibilityState ?? VisibilityState.NonImmersive;
         world.update(delta, elapsedTime);
         renderer.render(world.scene, world.camera);
-        splatLoader.render();
     });
 }
 
@@ -177,9 +186,9 @@ export async function prepareXRWorld(splatUrl) {
 
     worldInstance = world;
 
-    applyMatchaBackground(world);
+    scheduleMatchaBackground(world);
 
-    const { scene, camera, renderer } = world;
+    const { scene, renderer } = world;
 
     const { scene: envMesh } = AssetManager.getGLTF('environmentDesk');
     envMesh.visible = false;
@@ -189,16 +198,14 @@ export async function prepareXRWorld(splatUrl) {
         .createTransformEntity(envMesh)
         .addComponent(LocomotionEnvironment, { type: EnvironmentType.STATIC });
 
-    xrSplatLoader = new XRSplatLoader({ scene, camera, renderer });
+    xrSplatLoader = new XRSplatLoader({ scene, renderer });
 
     if (splatUrl) {
         await xrSplatLoader.load(splatUrl);
-        console.log('[prepareXRWorld] splat loaded, scene children:', scene.children.length);
+        console.log('[prepareXRWorld] splat loaded into IWSDK scene');
     }
 
-    const XRSplatSystem = createXRSplatSystem(xrSplatLoader);
-    world.registerSystem(XRSplatSystem);
-    installSplatRenderHook(world, xrSplatLoader);
+    installRenderLoop(world);
 
     return world;
 }
