@@ -14,13 +14,48 @@ export class XRSplatLoader {
         this.dropIn = null;
         this.ready = false;
         this._onXRSessionStart = () => {
-            if (this.dropIn?.viewer) this.dropIn.viewer.webXRActive = true;
+            console.log('[XRSplatLoader] renderer.xr "sessionstart" fired');
+            this.setWebXRActive(true);
         };
         this._onXRSessionEnd = () => {
-            if (this.dropIn?.viewer) this.dropIn.viewer.webXRActive = false;
+            console.log('[XRSplatLoader] renderer.xr "sessionend" fired');
+            this.setWebXRActive(false);
         };
         this.renderer.xr.addEventListener('sessionstart', this._onXRSessionStart);
         this.renderer.xr.addEventListener('sessionend', this._onXRSessionEnd);
+    }
+
+    /**
+     * Force the inner mkkellogg viewer into / out of stereo WebXR mode.
+     * mkkellogg only applies per-eye focal-length correction
+     * (adjustForWebXRStereo) when viewer.webXRActive === true; without it the
+     * splats are sized for a mono framebuffer and collapse to ~nothing in the
+     * stereo immersive frame.
+     */
+    setWebXRActive(active) {
+        const viewer = this.dropIn?.viewer;
+        if (!viewer) return;
+        viewer.webXRActive = active;
+        console.log('[XRSplatLoader] webXRActive =', active);
+    }
+
+    /**
+     * Throttled diagnostics — call from the render loop. Prints whether the
+     * splat is actually ready to draw inside the immersive frame.
+     */
+    logDiagnostics(tag = '') {
+        const viewer = this.dropIn?.viewer;
+        console.log(`[XRSplatLoader diag${tag ? ' ' + tag : ''}]`, {
+            hasDropIn: !!this.dropIn,
+            ready: this.ready,
+            isPresenting: this.renderer.xr.isPresenting,
+            webXRActive: viewer?.webXRActive,
+            splatRenderReady: viewer?.splatRenderReady,
+            initialized: viewer?.initialized,
+            sceneCount: viewer?.getSceneCount?.(),
+            dropInVisible: this.dropIn?.visible,
+            dropInParent: this.dropIn?.parent?.type || null,
+        });
     }
 
     async load(url) {
@@ -47,12 +82,24 @@ export class XRSplatLoader {
             scale: [1, 1, 1],
         });
 
-        if (this.dropIn.viewer) {
-            this.dropIn.viewer.webXRActive = this.renderer.xr.isPresenting;
+        // The splat mesh must never be frustum-culled: in stereo the cull test
+        // runs against the mono camera and can drop the mesh entirely.
+        const splatMesh = this.dropIn.viewer?.splatMesh;
+        if (splatMesh) {
+            splatMesh.frustumCulled = false;
+            this.dropIn.frustumCulled = false;
         }
 
+        // Sync to whatever the session state is right now (covers the case
+        // where the session started before this (re)load finished).
+        this.setWebXRActive(this.renderer.xr.isPresenting);
+
         this.ready = true;
-        console.log('[XRSplatLoader] DropInViewer splat ready for XR');
+        console.log('[XRSplatLoader] DropInViewer splat ready for XR', {
+            isPresenting: this.renderer.xr.isPresenting,
+            sceneCount: this.dropIn.viewer?.getSceneCount?.(),
+            splatMesh: !!splatMesh,
+        });
     }
 
     async _dispose() {

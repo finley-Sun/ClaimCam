@@ -58,9 +58,22 @@ function applyMatchaBackground(world) {
     }
 }
 
-function scheduleMatchaBackground(world) {
+function scheduleMatchaBackground(world, attempt = 0) {
+    const root = world.activeLevel?.value;
+    if (!root) {
+        // activeLevel isn't ready yet right after World.create — retry a few
+        // frames. If this never resolves, the default (blue) dome is why the
+        // custom background never appears.
+        if (attempt > 60) {
+            console.warn('[matcha] activeLevel never became available; default dome will show');
+            return;
+        }
+        requestAnimationFrame(() => scheduleMatchaBackground(world, attempt + 1));
+        return;
+    }
     applyMatchaBackground(world);
     requestAnimationFrame(() => applyMatchaBackground(world));
+    console.log('[matcha] background applied to level root');
 }
 
 /**
@@ -69,6 +82,8 @@ function scheduleMatchaBackground(world) {
 function installRenderLoop(world) {
     const renderer = world.renderer;
     const clock = new Clock();
+    let frameCount = 0;
+    let loggedPresenting = false;
 
     renderer.setAnimationLoop((time, xrFrame) => {
         const delta = clock.getDelta();
@@ -77,6 +92,23 @@ function installRenderLoop(world) {
             world.session?.visibilityState ?? VisibilityState.NonImmersive;
         world.update(delta, elapsedTime);
         renderer.render(world.scene, world.camera);
+
+        // ── Diagnostics ──
+        // Confirm THIS loop is the one running once we're in an immersive frame,
+        // and dump splat readiness a few times so it's visible in the headset
+        // console without spamming.
+        frameCount++;
+        const presenting = renderer.xr.isPresenting;
+        if (presenting && !loggedPresenting) {
+            loggedPresenting = true;
+            console.log('[installRenderLoop] custom loop is running in immersive frame', {
+                hasXrFrame: !!xrFrame,
+                cameras: renderer.xr.getCamera()?.cameras?.length,
+            });
+        }
+        if (presenting && frameCount % 120 === 0) {
+            xrSplatLoader?.logDiagnostics('renderloop');
+        }
     });
 }
 
@@ -124,6 +156,11 @@ async function bindPendingXRSession(world) {
             world.renderer.xr.setReferenceSpaceType(resolvedType);
             await world.renderer.xr.setSession(session);
             world.session = session;
+
+            // Don't rely solely on the renderer.xr 'sessionstart' event — force
+            // the splat viewer into stereo mode now that the session is live.
+            xrSplatLoader?.setWebXRActive(true);
+            console.log('[XR] session bound; isPresenting =', world.renderer.xr.isPresenting);
         } catch (err) {
             console.error('[XR] Failed to acquire reference space:', err);
             try {
