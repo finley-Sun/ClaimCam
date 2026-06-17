@@ -26,7 +26,7 @@ export default defineConfig({
         outDir: 'dist',
         sourcemap: process.env.NODE_ENV !== 'production',
         target: 'esnext',
-        rollupOptions: { input: './index.html' }
+        rollupOptions: { input: './landing.html' }
     },
     esbuild: { target: 'esnext' },
     optimizeDeps: {
