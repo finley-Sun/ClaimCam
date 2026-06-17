@@ -11,7 +11,7 @@ import {
     resolveReferenceSpaceType,
 } from '@iwsdk/core';
 
-import { EnvironmentType, LocomotionEnvironment } from '@iwsdk/core';
+import { EnvironmentType, LocomotionEnvironment, DomeGradient, IBLGradient } from '@iwsdk/core';
 import { GaussianSplatViewer } from './SplatManagement/gaussianSplat.js';
 import { XRSplatLoader, createXRSplatSystem } from './SplatManagement/xrSplatSystem.js';
 
@@ -32,6 +32,25 @@ const xrDefaults = {
 let worldInstance = null;
 let xrSplatLoader = null;
 let pendingSessionPromise = null;
+
+const MATCHA_GRADIENT = {
+    sky: [0.82, 0.92, 0.76, 1.0],
+    equator: [0.55, 0.72, 0.42, 1.0],
+    ground: [0.38, 0.55, 0.30, 1.0],
+};
+
+function applyMatchaBackground(world) {
+    const root = world.activeLevel?.value;
+    if (!root) return;
+
+    for (const component of [DomeGradient, IBLGradient]) {
+        if (!root.hasComponent(component)) continue;
+        root.setValue(component, 'sky', MATCHA_GRADIENT.sky);
+        root.setValue(component, 'equator', MATCHA_GRADIENT.equator);
+        root.setValue(component, 'ground', MATCHA_GRADIENT.ground);
+        root.setValue(component, '_needsUpdate', true);
+    }
+}
 
 /**
  * IWSDK runs ECS systems, then renderer.render(). Gaussian splats need a custom
@@ -157,6 +176,8 @@ export async function prepareXRWorld(splatUrl) {
     });
 
     worldInstance = world;
+
+    applyMatchaBackground(world);
 
     const { scene, camera, renderer } = world;
 
