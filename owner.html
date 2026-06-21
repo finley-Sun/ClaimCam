@@ -1,0 +1,358 @@
+<!-- ClaimCam Owner Dashboard — main HTML shell -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClaimCam</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/public/textures/logo-design.png" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="src/style/owner.css" />
+</head>
+<body>
+
+  <div id="owner-root">
+
+    <!-- ═══════════════════════════════════════════
+         SIDEBAR
+    ═══════════════════════════════════════════ -->
+    <nav id="owner-sidebar">
+
+      <header class="sidebar-header">
+        <img
+          class="sidebar-logo"
+          src="/public/textures/logo-onWhite.png"
+          alt="ClaimCam"
+        />
+      </header>
+
+      <nav class="sidebar-nav">
+
+        <button id="btn-property" class="sidebar-btn active">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 12L12 3l9 9" />
+            <path d="M9 21V12h6v9" />
+          </svg>
+          <span>Your Property</span>
+        </button>
+
+        <button id="btn-claims" class="sidebar-btn">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+          <span>Your Claims</span>
+        </button>
+
+      </nav>
+
+      <div class="sidebar-footer">
+
+        <button id="btn-contact" class="sidebar-btn sidebar-contact">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 18v-6a9 9 0 0118 0v6" />
+            <path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z" />
+          </svg>
+          <span>Get Assistance</span>
+        </button>
+
+      </div>
+
+    </nav>
+    <!-- /SIDEBAR -->
+
+
+    <!-- ═══════════════════════════════════════════
+         STAGE
+    ═══════════════════════════════════════════ -->
+    <main id="owner-stage">
+
+      <!-- Top control bar -->
+      <div class="stage-top-bar">
+
+        <div class="stage-top-left">
+
+          <!-- Object selector dropdown -->
+          <div class="dropdown-wrap" id="obj-dropdown-wrap">
+            <button class="dropdown-pill" id="obj-pill">
+              <span class="pill-label" id="obj-pill-label">Select object</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+
+            <div class="dropdown-menu" id="obj-menu">
+              <div class="dropdown-section-label">INSURED OBJECTS</div>
+              <ul class="dropdown-list" id="obj-list">
+                <!-- Populated by JS -->
+              </ul>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-add" id="obj-add-btn">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 5v14" />
+                  <path d="M5 12h14" />
+                </svg>
+                <span>Add object</span>
+              </button>
+            </div>
+          </div>
+          <!-- /Object dropdown -->
+
+          <!-- Claim / scan selector dropdown -->
+          <div class="dropdown-wrap" id="claim-dropdown-wrap">
+            <button class="dropdown-pill" id="claim-pill">
+              <span class="pill-label" id="claim-pill-label">All scans</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+
+            <div class="dropdown-menu" id="claim-menu">
+              <div class="dropdown-section-label">SCANS</div>
+              <ul class="dropdown-list" id="claim-list">
+                <!-- Populated by JS -->
+              </ul>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-add" id="claim-add-btn">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 5v14" />
+                  <path d="M5 12h14" />
+                </svg>
+                <span>New claim</span>
+              </button>
+            </div>
+          </div>
+          <!-- /Claim dropdown -->
+
+        </div>
+        <!-- /stage-top-left -->
+
+        <div class="stage-top-right">
+
+          <!-- Toggle archive panel -->
+          <button class="stage-icon-btn" id="archive-toggle-btn" aria-label="Toggle archive panel">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <line x1="9" y1="3" x2="9" y2="21" />
+            </svg>
+          </button>
+
+        </div>
+        <!-- /stage-top-right -->
+
+      </div>
+      <!-- /stage-top-bar -->
+
+      <!-- Gaussian splat renderer container -->
+      <div id="stage-renderer"></div>
+
+      <!-- Empty state — shown when no object is selected -->
+      <div class="stage-empty" id="stage-empty">
+        <p>Select an insured object to visualise its 3D reconstruction</p>
+      </div>
+
+      <!-- Loading state -->
+      <div class="stage-loading" id="stage-loading">
+        <div class="stage-spinner"></div>
+        <p>Loading reconstruction...</p>
+      </div>
+
+      <!-- Floating label overlay (hidden by default) -->
+      <div class="stage-label" id="stage-label"></div>
+
+      <!-- XR entry button (hidden by default) -->
+      <button class="xr-btn" id="xr-btn" aria-label="Enter XR mode">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="2" y="7" width="20" height="11" rx="3" />
+          <circle cx="8" cy="13" r="1.5" />
+          <circle cx="16" cy="13" r="1.5" />
+        </svg>
+        <span>Enter XR</span>
+      </button>
+
+    </main>
+    <!-- /STAGE -->
+
+
+    <!-- ═══════════════════════════════════════════
+         ARCHIVE
+    ═══════════════════════════════════════════ -->
+    <aside id="owner-archive">
+      <div class="archive-inner">
+
+        <!-- Profile card -->
+        <div class="archive-profile-card">
+
+          <div class="archive-profile-top">
+
+            <div class="archive-avatar">
+              <span id="archive-initials">MR</span>
+            </div>
+
+            <div class="archive-profile-info">
+              <div class="archive-profile-name" id="archive-name">Marco Rossi</div>
+              <div class="archive-profile-badge">Homeowner</div>
+            </div>
+
+            <button class="archive-switch-btn" id="archive-switch-btn">Switch</button>
+
+          </div>
+
+          <div class="archive-profile-address" id="archive-address">Via Roma 12, Milano</div>
+
+        </div>
+        <!-- /archive-profile-card -->
+
+        <!-- Insurance plan row -->
+        <div class="archive-plan-row">
+
+          <div class="archive-plan-card">
+            <div class="archive-plan-label">CURRENT PLAN</div>
+            <div class="archive-plan-value">Premium+</div>
+          </div>
+
+          <div class="archive-plan-card">
+            <div class="archive-plan-label">SECURED</div>
+            <div class="archive-plan-value" id="archive-secured">€ 0</div>
+          </div>
+
+        </div>
+        <!-- /archive-plan-row -->
+
+        <!-- Section header: Insured objects -->
+        <div class="archive-section-header">
+          <span>Insured objects</span>
+          <button class="archive-add-btn" id="archive-add-btn" aria-label="Add insured object">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 5v14" />
+              <path d="M5 12h14" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Category tabs -->
+        <div class="archive-tabs">
+          <button
+            class="archive-tab active"
+            id="tab-household"
+            data-tab="household"
+          >Belongings</button>
+          <button
+            class="archive-tab"
+            id="tab-building"
+            data-tab="building"
+          >Structure</button>
+        </div>
+
+        <!-- Object list -->
+        <div id="archive-list-container">
+          <ul id="archive-list">
+            <!-- Populated by JS -->
+          </ul>
+        </div>
+
+      </div>
+    </aside>
+    <!-- /ARCHIVE -->
+
+  </div>
+  <!-- /#owner-root -->
+
+  <!-- Module script -->
+  <script type="module" src="src/owner.js"></script>
+
+</body>
+</html>

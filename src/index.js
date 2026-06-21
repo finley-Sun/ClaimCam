@@ -90,8 +90,11 @@ export async function initXR(splatUrl) {
     return world;
 }
 
-export function initGaussian() {
-    return new GaussianSplatViewer({
-        container: document.getElementById('view-dashboard')
-    });
+export function initGaussian(containerId = 'view-dashboard') {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error('[initGaussian] container not found:', containerId);
+        return null;
+    }
+    return new GaussianSplatViewer({ container });
 }

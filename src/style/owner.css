@@ -1,0 +1,733 @@
+/* ============================================================
+   owner.css — Dark-theme 3-column insurance dashboard
+   Layout: [Sidebar | Stage | Archive]
+   ============================================================ */
+
+/* ── Base Reset ─────────────────────────────────────────────── */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    background: #111;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    color: #fff;
+    font-size: 13px;
+}
+
+/* ── CSS Variables ──────────────────────────────────────────── */
+:root {
+    --sidebar-w: 200px;
+    --archive-w: 300px;
+    --bg: #111111;
+    --bg-2: #1a1a1a;
+    --bg-3: #222222;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(255, 255, 255, 0.15);
+    --text: #ffffff;
+    --text-2: rgba(255, 255, 255, 0.55);
+    --text-3: rgba(255, 255, 255, 0.3);
+    --accent: #ffffff;
+    --radius: 10px;
+    --radius-sm: 6px;
+}
+
+/* ── Root Layout Grid ───────────────────────────────────────── */
+#owner-root {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Archive panel open: add third column */
+#owner-root.archive-open {
+    grid-template-columns: var(--sidebar-w) 1fr var(--archive-w);
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+#owner-sidebar {
+    width: var(--sidebar-w);
+    height: 100vh;
+    background: #161616;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 12px;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Sidebar header with logo */
+.sidebar-header {
+    padding: 4px 8px 16px;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-logo {
+    height: 32px;
+    width: auto;
+}
+
+/* Navigation list */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+/* Individual nav button */
+.sidebar-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--text-2);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    text-align: left;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-btn svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+.sidebar-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+}
+
+.sidebar-btn.active {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--bg-3);
+    font-weight: 500;
+}
+
+/* Sidebar footer */
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.sidebar-contact {
+    color: var(--text-3);
+}
+
+/* ============================================================
+   STAGE (center column)
+   ============================================================ */
+#owner-stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #0d0d0d;
+}
+
+/* Floating top bar overlaid on the canvas */
+.stage-top-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 14px 14px 0;
+}
+
+.stage-top-left {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.stage-top-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* ── Dropdown ───────────────────────────────────────────────── */
+.dropdown-wrap {
+    position: relative;
+}
+
+.dropdown-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    background: rgba(20, 20, 20, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.15s;
+}
+
+.dropdown-pill svg {
+    width: 13px;
+    height: 13px;
+    color: var(--text-3);
+    flex-shrink: 0;
+}
+
+.dropdown-pill:hover {
+    border-color: var(--border-hover);
+}
+
+.dropdown-pill.open {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Floating dropdown panel */
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 200px;
+    background: #1c1c1c;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px;
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.dropdown-menu.open {
+    display: flex;
+}
+
+/* Small uppercase section label inside dropdown */
+.dropdown-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--text-3);
+    padding: 6px 8px 4px;
+    text-transform: uppercase;
+}
+
+.dropdown-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text-2);
+    font-size: 12px;
+    transition: background 0.1s;
+}
+
+.dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text);
+}
+
+.dropdown-item.selected {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.dropdown-item svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+
+/* Thin separator line */
+.dropdown-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+}
+
+/* "Add new" action row at bottom of dropdown */
+.dropdown-add {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 12px;
+    background: none;
+    border: none;
+    font-family: inherit;
+    width: 100%;
+    transition: color 0.1s;
+}
+
+.dropdown-add svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+
+.dropdown-add:hover {
+    color: var(--text);
+}
+
+/* ── Stage icon buttons (top bar) ───────────────────────────── */
+.stage-icon-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(20, 20, 20, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-2);
+    transition: all 0.15s;
+}
+
+.stage-icon-btn svg {
+    width: 15px;
+    height: 15px;
+}
+
+.stage-icon-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text);
+}
+
+.stage-icon-btn.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+}
+
+/* ── Stage renderer canvas container ───────────────────────── */
+#stage-renderer {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+}
+
+/* ── Empty state overlay ────────────────────────────────────── */
+.stage-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.stage-empty p {
+    font-size: 13px;
+    color: var(--text-3);
+    text-align: center;
+    max-width: 280px;
+    line-height: 1.6;
+}
+
+/* ── Loading overlay ────────────────────────────────────────── */
+.stage-loading {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    background: rgba(13, 13, 13, 0.7);
+    backdrop-filter: blur(4px);
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stage-loading.visible {
+    display: flex;
+}
+
+/* Spinning indicator */
+.stage-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border);
+    border-top-color: rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.stage-loading p {
+    font-size: 12px;
+    color: var(--text-3);
+}
+
+/* ── Stage watermark label ──────────────────────────────────── */
+.stage-label {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.2);
+    pointer-events: none;
+    display: none;
+}
+
+.stage-label.visible {
+    display: block;
+}
+
+/* ── XR / immersive mode button ─────────────────────────────── */
+.xr-btn {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #111;
+    border: none;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+}
+
+.xr-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.xr-btn.visible {
+    display: flex;
+}
+
+.xr-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================================
+   ARCHIVE (right panel)
+   ============================================================ */
+#owner-archive {
+    width: var(--archive-w);
+    height: 100vh;
+    background: #161616;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Scrollable inner container */
+.archive-inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    padding: 14px;
+    gap: 12px;
+}
+
+/* ── Profile card ───────────────────────────────────────────── */
+.archive-profile-card {
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.archive-profile-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Avatar circle with initials */
+.archive-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    flex-shrink: 0;
+}
+
+.archive-profile-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.archive-profile-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.archive-profile-badge {
+    font-size: 11px;
+    color: var(--text-3);
+}
+
+/* Button to switch the active insured profile */
+.archive-switch-btn {
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-2);
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+}
+
+.archive-switch-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text);
+}
+
+.archive-profile-address {
+    font-size: 11px;
+    color: var(--text-3);
+}
+
+/* ── Plan summary cards ─────────────────────────────────────── */
+.archive-plan-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.archive-plan-card {
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.archive-plan-label {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-3);
+}
+
+.archive-plan-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* ── Section headers ────────────────────────────────────────── */
+.archive-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2px;
+}
+
+.archive-section-header span {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-2);
+}
+
+/* Small + button next to section header */
+.archive-add-btn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-3);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.archive-add-btn svg {
+    width: 13px;
+    height: 13px;
+}
+
+.archive-add-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text);
+}
+
+/* ── Tabs (e.g. Policies / Claims) ─────────────────────────── */
+.archive-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-3);
+    border-radius: 8px;
+    padding: 3px;
+}
+
+.archive-tab {
+    flex: 1;
+    padding: 6px;
+    text-align: center;
+    font-size: 12px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-3);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+}
+
+.archive-tab.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+}
+
+/* ── Archive item list ──────────────────────────────────────── */
+#archive-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Individual policy / claim card */
+.archive-item {
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.archive-item:hover {
+    border-color: var(--border-hover);
+}
+
+.archive-item.selected {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.archive-item-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+/* Two-column value grid inside each card */
+.archive-item-values {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.archive-item-val {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.archive-item-val-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-3);
+}
+
+.archive-item-val-value {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-2);
+}
+
+/* Action buttons row at bottom of each archive item */
+.archive-item-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.archive-action-btn {
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-2);
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+}
+
+.archive-action-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text);
+}
