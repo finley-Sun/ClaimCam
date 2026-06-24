@@ -69,11 +69,14 @@ export function SplatRenderer({
               ({ warmSuperSplatVR }) => warmSuperSplatVR(splatUrl),
             );
           };
-          if ("requestIdleCallback" in window) {
-            window.requestIdleCallback(warmVR, { timeout: 2500 });
-          } else {
-            window.setTimeout(warmVR, 1200);
-          }
+          import("../../../SplatManagement/xrDevice.js").then(({ prefersSequentialVRLoad }) => {
+            if (prefersSequentialVRLoad()) return;
+            if ("requestIdleCallback" in window) {
+              window.requestIdleCallback(warmVR, { timeout: 2500 });
+            } else {
+              window.setTimeout(warmVR, 1200);
+            }
+          });
         }
       } catch (err) {
         console.error("[SplatRenderer] load failed:", err);

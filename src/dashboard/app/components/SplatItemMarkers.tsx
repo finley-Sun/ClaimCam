@@ -155,7 +155,7 @@ export function SplatItemMarkers({
                   "pointer-events-none mt-2 whitespace-nowrap rounded-full border px-3 py-1 backdrop-blur-md transition-all",
                   isActive
                     ? "border-primary/50 bg-black/75 text-white shadow-lg"
-                    : "border-white/20 bg-black/55 text-white/85",
+                    : "hidden",
                 )}
               >
                 <span className="text-xs font-medium">

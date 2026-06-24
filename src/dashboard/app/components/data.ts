@@ -16,8 +16,8 @@ export type InsuredItem = {
   coverage: number;
   category: string;
   hasEvidence: boolean;
-  // Normalized screen hint for raycast placement onto the splat surface.
-  marker: { x: number; y: number };
+  // Floor-plan placement within the splat bounds: x = left→right, y = back→forward, h = height.
+  marker: { x: number; y: number; h?: number };
   // Optional fixed world anchor [x, y, z] in splat space (overrides marker raycast).
   position?: [number, number, number];
 };
@@ -123,7 +123,7 @@ export const ROOMS: Room[] = [
         coverage: 1500,
         category: "Electronics",
         hasEvidence: true,
-        marker: { x: 0.5, y: 0.36 },
+        marker: { x: 0.55, y: 0.84, h: 0.52 },
       },
       {
         id: "curtains",
@@ -133,7 +133,7 @@ export const ROOMS: Room[] = [
         coverage: 350,
         category: "Furnishings",
         hasEvidence: false,
-        marker: { x: 0.82, y: 0.34 },
+        marker: { x: 0.9, y: 0.72, h: 0.58 },
       },
       {
         id: "speaker",
@@ -143,7 +143,7 @@ export const ROOMS: Room[] = [
         coverage: 400,
         category: "Audio",
         hasEvidence: true,
-        marker: { x: 0.68, y: 0.5 },
+        marker: { x: 0.74, y: 0.8, h: 0.3 },
       },
       {
         id: "sofa",
@@ -153,7 +153,7 @@ export const ROOMS: Room[] = [
         coverage: 2000,
         category: "Furniture",
         hasEvidence: false,
-        marker: { x: 0.5, y: 0.68 },
+        marker: { x: 0.64, y: 0.34, h: 0.24 },
       },
       {
         id: "console",
@@ -163,7 +163,7 @@ export const ROOMS: Room[] = [
         coverage: 650,
         category: "Electronics",
         hasEvidence: true,
-        marker: { x: 0.35, y: 0.52 },
+        marker: { x: 0.42, y: 0.78, h: 0.2 },
       },
     ],
     structure: [

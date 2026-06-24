@@ -9,8 +9,10 @@ import {
   isSuperSplatVRLoading,
   onSuperSplatXREnd,
   prepareSuperSplatVR,
+  teardownSuperSplatVR,
   warmSuperSplatVR,
 } from "../../../SplatManagement/superSplatVR.js";
+import { prefersSequentialVRLoad } from "../../../SplatManagement/xrDevice.js";
 import {
   destroySplatForXR,
   restoreSplatAfterXR,
@@ -48,7 +50,9 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
     }
 
     syncHeadsetReady();
-    warmSuperSplatVR(splatUrl);
+    if (!prefersSequentialVRLoad()) {
+      warmSuperSplatVR(splatUrl);
+    }
 
     const id = window.setInterval(syncHeadsetReady, 350);
     return () => clearInterval(id);
@@ -71,12 +75,19 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
     if (!isSuperSplatVRReady()) {
       setLoadingVR(true);
       try {
+        if (prefersSequentialVRLoad()) {
+          destroySplatForXR();
+          await new Promise((resolve) => window.setTimeout(resolve, 500));
+        }
         await prepareSuperSplatVR(splatUrl);
         setHeadsetReady(true);
       } catch (err) {
         console.error("[EnterXR] VR preload failed:", err);
+        await teardownSuperSplatVR();
         toast.error("VR not ready", {
-          description: "Headset viewer is still loading. Try again in a moment.",
+          description: prefersSequentialVRLoad()
+            ? "Freeing GPU memory and loading VR. Tap again in a moment."
+            : "Headset viewer is still loading. Try again in a moment.",
         });
         setLoadingVR(false);
         return;
@@ -84,7 +95,9 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
     }
 
     setLoadingVR(true);
-    destroySplatForXR();
+    if (!prefersSequentialVRLoad()) {
+      destroySplatForXR();
+    }
 
     try {
       enterSuperSplatVR();
@@ -103,11 +116,9 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
   const label =
     inXR || hasActiveSuperSplatVR()
       ? "Exit to Browser"
-      : loadingVR || (vrReady && !headsetReady)
+      : loadingVR || isSuperSplatVRLoading()
         ? "Preparing VR…"
-        : headsetReady
-          ? "Enter XR"
-          : "VR loading…";
+        : "Enter XR";
 
   return (
     <button

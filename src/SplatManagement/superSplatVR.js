@@ -4,6 +4,8 @@
  * fire startVR synchronously from the user's click (required on Quest).
  */
 
+import { prefersSequentialVRLoad } from './xrDevice.js';
+
 let iframe = null;
 let ready = false;
 let loading = false;
@@ -41,11 +43,15 @@ function ensureIframe() {
 
 function buildViewerUrl(splatUrl) {
     const url = new URL(viewerBaseUrl());
-    url.searchParams.set('content', splatUrl);
+    const absoluteContent = new URL(splatUrl, window.location.origin).href;
+    url.searchParams.set('content', absoluteContent);
     url.searchParams.set('noui', '');
     url.searchParams.set('noanim', '');
     url.searchParams.set('nofx', '');
     url.searchParams.set('renderer', 'webgl');
+    if (prefersSequentialVRLoad()) {
+        url.searchParams.set('budget', '1');
+    }
     return url.toString();
 }
 
@@ -57,6 +63,12 @@ function handleMessage(event) {
             ready = true;
             loading = false;
             console.log('[SuperSplat VR] viewer ready');
+            break;
+        case 'claimcam-vr-error':
+            ready = false;
+            loading = false;
+            preparePromise = null;
+            console.error('[SuperSplat VR] viewer error:', event.data?.message);
             break;
         case 'claimcam-vr-started':
             xrActive = true;
@@ -87,19 +99,27 @@ function waitForVRReady(frame, timeoutMs = 180000) {
             reject(new Error('SuperSplat VR viewer timed out while loading'));
         }, timeoutMs);
 
-        const onReady = (event) => {
+        const onMessage = (event) => {
             if (event.source !== frame.contentWindow) return;
-            if (event.data?.type !== 'claimcam-vr-ready') return;
-            cleanup();
-            resolve();
+
+            if (event.data?.type === 'claimcam-vr-ready') {
+                cleanup();
+                resolve();
+                return;
+            }
+
+            if (event.data?.type === 'claimcam-vr-error') {
+                cleanup();
+                reject(new Error(event.data?.message || 'VR viewer failed to load'));
+            }
         };
 
         const cleanup = () => {
             clearTimeout(timeout);
-            window.removeEventListener('message', onReady);
+            window.removeEventListener('message', onMessage);
         };
 
-        window.addEventListener('message', onReady);
+        window.addEventListener('message', onMessage);
     });
 }
 
@@ -145,10 +165,10 @@ export async function prepareSuperSplatVR(splatUrl) {
 
 /**
  * Fire-and-forget VR warm-up after the 2D splat is already on screen.
- * Reuses the same in-flight prepare promise if warm/prepare was already started.
+ * Skipped on Quest — both engines at once exhaust GPU memory.
  */
 export function warmSuperSplatVR(splatUrl) {
-    if (!splatUrl) return;
+    if (!splatUrl || prefersSequentialVRLoad()) return;
 
     if (currentUrl === splatUrl && (ready || preparePromise)) {
         return;
@@ -173,7 +193,6 @@ export function enterSuperSplatVR() {
     const win = iframe.contentWindow;
     const enterBtn = win?.document.getElementById('enterVR');
     if (enterBtn) {
-        // Synchronous click from the user's gesture (required on Quest).
         enterBtn.click();
     } else {
         win?.postMessage({ type: 'claimcam-start-vr' }, '*');

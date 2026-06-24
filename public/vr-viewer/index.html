@@ -593,16 +593,17 @@
             }
 
             document.addEventListener('DOMContentLoaded', async () => {
+                const notifyParent = (type, message) => {
+                    if (window.parent !== window) {
+                        window.parent.postMessage({ type, message }, '*');
+                    }
+                };
+
+                try {
                 const canvas = document.getElementById('application-canvas');
                 const settingsJson = await settings;
                 const viewer = await main(canvas, settingsJson, config);
                 const { app, events, state } = viewer.global;
-
-                const notifyParent = (type) => {
-                    if (window.parent !== window) {
-                        window.parent.postMessage({ type }, '*');
-                    }
-                };
 
                 events.on('loaded:changed', () => {
                     if (state.loaded) {
@@ -624,6 +625,10 @@
 
                 if (state.loaded) {
                     notifyParent('claimcam-vr-ready');
+                }
+                } catch (err) {
+                    console.error('[VR viewer] failed to start:', err);
+                    notifyParent('claimcam-vr-error', err?.message || String(err));
                 }
             });
         </script>
