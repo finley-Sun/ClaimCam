@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import type { GaussianSplatViewer } from "../../../SplatManagement/gaussianSplat.js";
 import {
   resolveItemWorldPositions,
@@ -35,16 +34,43 @@ export function SplatItemMarkers({
   useEffect(() => {
     if (!enabled || items.length === 0) return;
 
-    const mkViewer = viewer.getMkViewer();
-    const { width, height } = viewer.getContainerSize();
-    if (!mkViewer || width < 1 || height < 1) return;
+    worldPositionsRef.current = new Map();
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 48;
 
-    worldPositionsRef.current = resolveItemWorldPositions(
-      mkViewer,
-      items,
-      width,
-      height,
-    );
+    const tryResolve = () => {
+      if (cancelled) return;
+
+      const mkViewer = viewer.getMkViewer();
+      const { width, height } = viewer.getContainerSize();
+      if (!mkViewer || width < 1 || height < 1) {
+        schedule();
+        return;
+      }
+
+      const pending = items.filter((item) => !worldPositionsRef.current.has(item.id));
+      if (pending.length > 0) {
+        const batch = resolveItemWorldPositions(mkViewer, pending, width, height);
+        for (const [id, pos] of batch) {
+          worldPositionsRef.current.set(id, pos);
+        }
+      }
+
+      attempts += 1;
+      if (worldPositionsRef.current.size < items.length && attempts < maxAttempts) {
+        schedule();
+      }
+    };
+
+    const schedule = () => {
+      window.setTimeout(tryResolve, 200);
+    };
+
+    tryResolve();
+    return () => {
+      cancelled = true;
+    };
   }, [viewer, items, enabled]);
 
   // Update marker screen positions via DOM — avoid setState every frame.
@@ -90,7 +116,6 @@ export function SplatItemMarkers({
     <div className="pointer-events-none absolute inset-0 z-[5]">
       {items.map((item) => {
         const isActive = activeId === item.id;
-        const showLabel = isActive;
 
         return (
           <div
@@ -121,25 +146,22 @@ export function SplatItemMarkers({
                 className={cn(
                   "rounded-full ring-4 transition-all",
                   isActive
-                    ? "h-3 w-3 bg-primary ring-primary/30"
-                    : "h-2.5 w-2.5 bg-primary/80 ring-primary/15",
+                    ? "h-3.5 w-3.5 bg-primary ring-primary/40 shadow-[0_0_12px_var(--brand-glow)]"
+                    : "h-3 w-3 bg-primary/90 ring-primary/25",
                 )}
               />
-              <AnimatePresence>
-                {showLabel && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 4, scale: 0.92 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 4, scale: 0.92 }}
-                    transition={{ type: "spring", stiffness: 320, damping: 24 }}
-                    className="pointer-events-none mt-2 whitespace-nowrap rounded-full border border-primary/40 bg-primary/15 px-3 py-1 backdrop-blur-md"
-                  >
-                    <span className="text-xs text-primary-foreground/90">
-                      <span className="text-primary">●</span> {item.name}
-                    </span>
-                  </motion.div>
+              <div
+                className={cn(
+                  "pointer-events-none mt-2 whitespace-nowrap rounded-full border px-3 py-1 backdrop-blur-md transition-all",
+                  isActive
+                    ? "border-primary/50 bg-black/75 text-white shadow-lg"
+                    : "border-white/20 bg-black/55 text-white/85",
                 )}
-              </AnimatePresence>
+              >
+                <span className="text-xs font-medium">
+                  <span className="text-primary">●</span> {item.name}
+                </span>
+              </div>
             </div>
           </div>
         );

@@ -139,7 +139,7 @@ export function SplatRenderer({
         </p>
         {spatialReady && items.length > 0 && (
           <p className="mt-1 text-[10px] text-muted-foreground/70">
-            Hover items for labels · click to pin
+            Item labels track in 3D · click a pin to highlight in archive
           </p>
         )}
       </div>
