@@ -1,6 +1,9 @@
 import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 import { computeSplatBounds } from './splatPlacement.js';
 
+// mkkellogg uses quaternion [x, y, z, w]. [1,0,0,0] is 180° around X (upside down).
+const SPLAT_IDENTITY_ROTATION = [0, 0, 0, 1];
+
 window.addEventListener('unhandledrejection', (e) => {
   if (
     e.reason &&
@@ -76,7 +79,7 @@ export class GaussianSplatViewer {
       await this.viewer.addSplatScene(url, {
         splatAlphaRemovalThreshold: 5,
         position: [0, 0, 0],
-        rotation: [1, 0, 0, 0],
+        rotation: SPLAT_IDENTITY_ROTATION,
         scale: [1, 1, 1],
       });
 

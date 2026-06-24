@@ -1,6 +1,9 @@
 import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 import { computeSplatBounds } from './splatPlacement.js';
 
+// mkkellogg quaternion is [x, y, z, w] — identity, not [1,0,0,0] (180° flip on X).
+const SPLAT_IDENTITY_ROTATION = [0, 0, 0, 1];
+
 // Fallback placement if bounds can't be computed.
 export const SPLAT_XR_POSITION = [0, 1.0, -2];
 
@@ -86,7 +89,7 @@ export class XRSplatLoader {
         await this.dropIn.addSplatScene(url, {
             showLoadingUI: false,
             splatAlphaRemovalThreshold: 5,
-            rotation: [1, 0, 0, 0],
+            rotation: SPLAT_IDENTITY_ROTATION,
             scale: [1, 1, 1],
         });
 
