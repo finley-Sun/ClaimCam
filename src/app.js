@@ -1,5 +1,13 @@
-import { initXR, initGaussian, prepareXRWorld, captureXRSessionRequest, hasActiveXRSession, exitXRSession } from './index.js';
-import { VisibilityState } from '@iwsdk/core';
+import { initGaussian } from './index.js';
+import {
+    prepareSuperSplatVR,
+    enterSuperSplatVR,
+    hasActiveSuperSplatVR,
+    isSuperSplatVRReady,
+    exitSuperSplatVR,
+    onSuperSplatXREnd,
+    teardownSuperSplatVR,
+} from './SplatManagement/superSplatVR.js';
 import { ArchiveList } from './archiveList.js';
 import { mockObjects } from './mockData.js';
 import { CreationFlow } from './Flows/creationFlow.js';
@@ -64,8 +72,8 @@ splatSelectorSelect.addEventListener('change', async () => {
     loadingOverlay.classList.add('visible');
     try {
         await gsViewer.load(url);
-        await prepareXRWorld(url).catch((err) => {
-            console.warn('[XR] splat reload for XR failed:', err);
+        await prepareSuperSplatVR(url).catch((err) => {
+            console.warn('[VR] splat reload for headset viewer failed:', err);
         });
     } catch (e) {
         showErrorToast(
@@ -250,8 +258,8 @@ function bindGsViewer() {
 
  try {
  await gsViewer.load(currentObj.splatURL);
- await prepareXRWorld(currentObj.splatURL).catch((err) => {
-   console.warn('[XR] background world prep failed:', err);
+ await prepareSuperSplatVR(currentObj.splatURL).catch((err) => {
+   console.warn('[VR] headset viewer prep failed:', err);
  });
  loadingOverlay.classList.remove('visible');
  closeBtn.style.display = 'block';
@@ -398,7 +406,7 @@ function updateInfoCard(obj, viewerIsOpen = false) {
 }
 
 // ── XR Toggle ──
-let xrVisibilityBound = false;
+let xrEndBound = false;
 
 function resetXRButton() {
     xrBtn.innerHTML = `
@@ -413,16 +421,18 @@ function resetXRButton() {
 }
 
 xrBtn.addEventListener('click', async () => {
-  if (hasActiveXRSession()) {
-    exitXRSession();
+  if (hasActiveSuperSplatVR()) {
+    exitSuperSplatVR();
     return;
   }
 
-  // Must request the XR session synchronously on user gesture (required on Quest browser).
-  captureXRSessionRequest();
-
-  xrBtn.textContent = 'Loading XR...';
-  xrBtn.disabled = true;
+  if (!isSuperSplatVRReady()) {
+    showErrorToast(
+      'VR not ready',
+      'The headset viewer is still loading. Wait a moment and try again.'
+    );
+    return;
+  }
 
   if (gsViewer) {
     gsViewer.setXRActive(true);
@@ -435,35 +445,30 @@ xrBtn.addEventListener('click', async () => {
   splatSelectorBar.style.display = 'none';
 
   try {
-    const world = await initXR(currentSplatUrl);
+    // Fire startVR in the iframe synchronously from this click (Quest user-gesture).
+    enterSuperSplatVR();
+    xrBtn.innerHTML = 'Exit to Browser';
+    xrBtn.disabled = false;
 
-    if (world && !xrVisibilityBound) {
-      xrVisibilityBound = true;
-      world.visibilityState.subscribe((state) => {
-        if (state === VisibilityState.NonImmersive) {
-          resetXRButton();
-          sceneContainer.style.display = 'none';
-          if (currentSplatUrl) {
-            gsViewer.load(currentSplatUrl).then(() => {
-              closeBtn.style.display = 'block';
-              infoBtn.style.display = 'flex';
-              _rebuildSelector(currentObj);
-              updateInfoCard(currentObj, true);
-            });
-          }
-        } else {
-          xrBtn.innerHTML = 'Exit to Browser';
-          xrBtn.disabled = false;
-          if (gsViewer) gsViewer.hide();
+    if (!xrEndBound) {
+      xrEndBound = true;
+      onSuperSplatXREnd(() => {
+        resetXRButton();
+        if (currentSplatUrl && gsViewer) {
+          gsViewer.load(currentSplatUrl).then(() => {
+            closeBtn.style.display = 'block';
+            infoBtn.style.display = 'flex';
+            _rebuildSelector(currentObj);
+            updateInfoCard(currentObj, true);
+          });
         }
       });
     }
   } catch (err) {
-    console.error('[XR] Failed to enter immersive mode:', err);
+    console.error('[VR] Failed to enter immersive mode:', err);
     resetXRButton();
-    sceneContainer.style.display = 'none';
     showErrorToast(
-      'XR unavailable',
+      'VR unavailable',
       'Could not start immersive mode. Make sure you are using HTTPS and try again.'
     );
     if (currentSplatUrl && gsViewer) {
@@ -544,6 +549,7 @@ function showErrorToast(title, message) {
 }
 
 function _teardownViewer() {
+  teardownSuperSplatVR();
   if (gsViewer) {
     gsViewer.dispose();
     gsViewer = null;
