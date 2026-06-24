@@ -43,6 +43,7 @@ export function SplatRenderer({
 
     const viewer = viewerRef.current;
     let cancelled = false;
+    let vrPreloadTimer = 0;
 
     setLoading(true);
     setError(null);
@@ -54,19 +55,26 @@ export function SplatRenderer({
         await viewer.load(splatUrl);
         setActiveSplatViewer(viewer, splatUrl);
 
-        const { prepareSuperSplatVR } = await import(
-          "../../../SplatManagement/superSplatVR.js"
-        );
-        await prepareSuperSplatVR(splatUrl).catch((err) => {
-          console.warn("[VR] preload failed:", err);
-        });
-
         if (!cancelled) {
-          // Let the splat BVH finish building before raycast placement.
-          await new Promise((r) => setTimeout(r, 400));
-          setSpatialReady(true);
           setLoading(false);
           onReadyChange?.(true);
+        }
+
+        // Defer VR preload so the 2D splat gets bandwidth/GPU first.
+        vrPreloadTimer = window.setTimeout(() => {
+          if (cancelled) return;
+          import("../../../SplatManagement/superSplatVR.js")
+            .then(({ prepareSuperSplatVR }) =>
+              prepareSuperSplatVR(splatUrl).catch((err) => {
+                console.warn("[VR] background preload failed:", err);
+              }),
+            );
+        }, 2000);
+
+        if (!cancelled) {
+          await new Promise((r) => requestAnimationFrame(r));
+          await new Promise((r) => requestAnimationFrame(r));
+          setSpatialReady(true);
         }
       } catch (err) {
         console.error("[SplatRenderer] load failed:", err);
@@ -80,6 +88,7 @@ export function SplatRenderer({
 
     return () => {
       cancelled = true;
+      clearTimeout(vrPreloadTimer);
       setSpatialReady(false);
       onReadyChange?.(false);
     };

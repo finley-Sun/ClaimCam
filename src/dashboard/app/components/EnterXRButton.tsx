@@ -7,6 +7,7 @@ import {
   hasActiveSuperSplatVR,
   isSuperSplatVRReady,
   onSuperSplatXREnd,
+  prepareSuperSplatVR,
 } from "../../../SplatManagement/superSplatVR.js";
 import {
   destroySplatForXR,
@@ -21,6 +22,7 @@ type EnterXRButtonProps = {
 export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
   const [inXR, setInXR] = useState(false);
   const [loadingVR, setLoadingVR] = useState(false);
+  const [headsetReady, setHeadsetReady] = useState(isSuperSplatVRReady());
 
   useEffect(() => {
     onSuperSplatXREnd(async () => {
@@ -30,18 +32,54 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
     });
   }, []);
 
-  const handleClick = () => {
+  useEffect(() => {
+    if (!vrReady) {
+      setHeadsetReady(false);
+      return;
+    }
+
+    if (isSuperSplatVRReady()) {
+      setHeadsetReady(true);
+      return;
+    }
+
+    const id = window.setInterval(() => {
+      if (isSuperSplatVRReady()) {
+        setHeadsetReady(true);
+        clearInterval(id);
+      }
+    }, 400);
+
+    return () => clearInterval(id);
+  }, [vrReady, splatUrl]);
+
+  const handleClick = async () => {
     if (hasActiveSuperSplatVR() || inXR) {
       exitSuperSplatVR();
       setInXR(false);
       return;
     }
 
-    if (!vrReady || !isSuperSplatVRReady()) {
-      toast.error("VR not ready", {
-        description: "Wait for the reconstruction to finish loading, then try again.",
+    if (!vrReady) {
+      toast.error("Scene not ready", {
+        description: "Wait for the reconstruction to appear first.",
       });
       return;
+    }
+
+    if (!isSuperSplatVRReady()) {
+      setLoadingVR(true);
+      try {
+        await prepareSuperSplatVR(splatUrl);
+        setHeadsetReady(true);
+      } catch (err) {
+        console.error("[EnterXR] VR preload failed:", err);
+        toast.error("VR not ready", {
+          description: "Headset viewer is still loading. Try again in a moment.",
+        });
+        setLoadingVR(false);
+        return;
+      }
     }
 
     setLoadingVR(true);
@@ -61,13 +99,20 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
     }
   };
 
-  const label = inXR || hasActiveSuperSplatVR() ? "Exit to Browser" : "Enter XR";
+  const label =
+    inXR || hasActiveSuperSplatVR()
+      ? "Exit to Browser"
+      : loadingVR
+        ? "Preparing VR…"
+        : headsetReady
+          ? "Enter XR"
+          : "VR loading…";
 
   return (
     <button
       type="button"
       onClick={handleClick}
-      disabled={!splatUrl || loadingVR}
+      disabled={!splatUrl || (!vrReady && !loadingVR)}
       className="group flex items-center gap-2.5 rounded-full bg-primary px-5 py-3 text-sm text-primary-foreground shadow-[0_12px_36px_-10px_var(--brand-glow)] transition-transform hover:scale-[1.03] disabled:opacity-60 disabled:hover:scale-100"
     >
       {loadingVR ? (
