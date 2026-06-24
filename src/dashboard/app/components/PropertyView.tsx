@@ -1,0 +1,104 @@
+import { useState } from "react";
+import { Archive } from "lucide-react";
+import { SplatRenderer } from "./SplatRenderer";
+import { RoomSwitcher } from "./RoomSwitcher";
+import { TimeframeSelector } from "./TimeframeSelector";
+import { ArchivePanel } from "./ArchivePanel";
+import { EnterXRButton } from "./EnterXRButton";
+import { cn } from "./ui/utils";
+import { getRoomsByUser, LOGS_BY_USER, type Room, type TimeframeLog, type UserType } from "./data";
+import { resolveSplatUrl } from "../../lib/splatUrls";
+
+type PropertyViewProps = {
+  userType: UserType;
+  onSwitchPortal: () => void;
+  activeRoomId: string;
+  onRoomChange: (id: string) => void;
+  activeLogId: string;
+  onLogChange: (id: string) => void;
+  archiveOpen: boolean;
+  onToggleArchive: () => void;
+  highlightedItemId: string | null;
+  onHighlight: (id: string) => void;
+};
+
+export function PropertyView({
+  userType,
+  onSwitchPortal,
+  activeRoomId,
+  onRoomChange,
+  activeLogId,
+  onLogChange,
+  archiveOpen,
+  onToggleArchive,
+  highlightedItemId,
+  onHighlight,
+}: PropertyViewProps) {
+  const rooms = getRoomsByUser(userType);
+  const room: Room = rooms.find((r) => r.id === activeRoomId) ?? rooms[0];
+  const logs = LOGS_BY_USER[userType];
+  const log: TimeframeLog = logs.find((l) => l.id === activeLogId) ?? logs[0];
+  const isDamage = log.type === "damage";
+  const highlightedItem = room.items.find((i) => i.id === highlightedItemId) ?? null;
+  const splatUrl = resolveSplatUrl(room.id, log.type);
+  const [splatReady, setSplatReady] = useState(false);
+
+  return (
+    <div className="flex h-full min-w-0 flex-1">
+      {/* Renderer stage */}
+      <div className="relative min-w-0 flex-1 overflow-hidden">
+        <SplatRenderer
+          key={`${room.id}-${log.id}`}
+          roomName={room.name}
+          splatUrl={splatUrl}
+          isDamage={isDamage}
+          highlightedItem={highlightedItem}
+          onReadyChange={setSplatReady}
+        />
+
+        {/* Top-left floating controls */}
+        <div className="absolute left-5 top-5 z-10 flex flex-wrap items-center gap-2.5">
+          <RoomSwitcher rooms={rooms} activeRoomId={activeRoomId} onSelect={onRoomChange} />
+          <TimeframeSelector logs={logs} activeLogId={activeLogId} onSelect={onLogChange} />
+        </div>
+
+        {/* Damage banner */}
+        {isDamage && (
+          <div className="absolute left-1/2 top-5 z-10 -translate-x-1/2 rounded-full border border-destructive/40 bg-destructive/15 px-3 py-1 text-xs text-destructive backdrop-blur-md">
+            Viewing incident capture · {log.label}
+          </div>
+        )}
+
+        {/* Archive toggle (top-right) */}
+        <button
+          onClick={onToggleArchive}
+          className={cn(
+            "absolute right-5 top-5 z-10 flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm backdrop-blur-xl transition-colors",
+            archiveOpen
+              ? "border-primary/50 bg-primary/20 text-primary"
+              : "border-[var(--surface-glass-border)] bg-[var(--surface-glass-strong)] text-foreground hover:border-primary/40",
+          )}
+        >
+          <Archive className="size-4" />
+          <span>Archive</span>
+        </button>
+
+        {/* Enter XR (bottom-right of the stage) */}
+        <div className="absolute bottom-6 right-6 z-10">
+          <EnterXRButton splatUrl={splatUrl} vrReady={splatReady} />
+        </div>
+      </div>
+
+      {/* Right archive column */}
+      <ArchivePanel
+        open={archiveOpen}
+        room={room}
+        userType={userType}
+        onSwitchPortal={onSwitchPortal}
+        highlightedItemId={highlightedItemId}
+        onHighlight={onHighlight}
+        onClose={onToggleArchive}
+      />
+    </div>
+  );
+}
