@@ -25,7 +25,6 @@ export function SplatItemMarkers({
   onHighlight,
   enabled,
 }: SplatItemMarkersProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
   const worldPositionsRef = useRef<Map<string, import("three").Vector3>>(new Map());
   const markerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const screenPositionsRef = useRef<Map<string, { x: number; y: number; visible: boolean }>>(
@@ -85,40 +84,10 @@ export function SplatItemMarkers({
     return () => cancelAnimationFrame(raf);
   }, [viewer, items, enabled]);
 
-  const handlePointerMove = (event: React.PointerEvent) => {
-    const rect = overlayRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    const px = event.clientX - rect.left;
-    const py = event.clientY - rect.top;
-
-    let closest: { id: string; dist: number } | null = null;
-
-    for (const item of items) {
-      const pos = screenPositionsRef.current.get(item.id);
-      if (!pos?.visible) continue;
-      const dist = Math.hypot(pos.x - px, pos.y - py);
-      if (dist <= HOVER_RADIUS_PX && (!closest || dist < closest.dist)) {
-        closest = { id: item.id, dist };
-      }
-    }
-
-    const next = closest?.id ?? null;
-    setHoveredId((prev) => (prev === next ? prev : next));
-  };
-
   const activeId = hoveredId ?? highlightedItemId;
 
   return (
-    <div
-      ref={overlayRef}
-      className="absolute inset-0 z-[5]"
-      onPointerMove={handlePointerMove}
-      onPointerLeave={() => setHoveredId(null)}
-      onClick={() => {
-        if (hoveredId) onHighlight(hoveredId);
-      }}
-    >
+    <div className="pointer-events-none absolute inset-0 z-[5]">
       {items.map((item) => {
         const isActive = activeId === item.id;
         const showLabel = isActive;
@@ -130,10 +99,21 @@ export function SplatItemMarkers({
               if (el) markerRefs.current.set(item.id, el);
               else markerRefs.current.delete(item.id);
             }}
-            className="absolute -translate-x-1/2 -translate-y-1/2"
+            className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2"
             style={{ display: "none" }}
+            onPointerEnter={() => setHoveredId(item.id)}
+            onPointerLeave={() =>
+              setHoveredId((prev) => (prev === item.id ? null : prev))
+            }
+            onClick={(event) => {
+              event.stopPropagation();
+              onHighlight(item.id);
+            }}
           >
-            <div className="relative flex flex-col items-center">
+            <div
+              className="relative flex flex-col items-center justify-center"
+              style={{ width: HOVER_RADIUS_PX * 2, height: HOVER_RADIUS_PX * 2 }}
+            >
               {isActive && (
                 <span className="absolute h-10 w-10 animate-ping rounded-full bg-primary/30" />
               )}
