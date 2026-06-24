@@ -1,32 +1,37 @@
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import { Loader2 } from "lucide-react";
 import { GaussianSplatViewer } from "../../../SplatManagement/gaussianSplat.js";
 import {
   setActiveSplatViewer,
   clearActiveSplatViewer,
 } from "../../../SplatManagement/splatBridge.js";
+import { SplatItemMarkers } from "./SplatItemMarkers";
 import type { InsuredItem } from "./data";
 
 type SplatRendererProps = {
   roomName: string;
   splatUrl: string;
+  items: InsuredItem[];
   isDamage?: boolean;
-  highlightedItem: InsuredItem | null;
+  highlightedItemId: string | null;
+  onHighlight: (id: string) => void;
   onReadyChange?: (ready: boolean) => void;
 };
 
 export function SplatRenderer({
   roomName,
   splatUrl,
+  items,
   isDamage,
-  highlightedItem,
+  highlightedItemId,
+  onHighlight,
   onReadyChange,
 }: SplatRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<GaussianSplatViewer | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [spatialReady, setSpatialReady] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -41,6 +46,7 @@ export function SplatRenderer({
 
     setLoading(true);
     setError(null);
+    setSpatialReady(false);
     onReadyChange?.(false);
 
     (async () => {
@@ -56,6 +62,9 @@ export function SplatRenderer({
         });
 
         if (!cancelled) {
+          // Let the splat BVH finish building before raycast placement.
+          await new Promise((r) => setTimeout(r, 400));
+          setSpatialReady(true);
           setLoading(false);
           onReadyChange?.(true);
         }
@@ -71,6 +80,7 @@ export function SplatRenderer({
 
     return () => {
       cancelled = true;
+      setSpatialReady(false);
       onReadyChange?.(false);
     };
   }, [splatUrl, onReadyChange]);
@@ -93,7 +103,6 @@ export function SplatRenderer({
         style={{ touchAction: "none" }}
       />
 
-      {/* Ambient glow */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
@@ -103,8 +112,18 @@ export function SplatRenderer({
         }}
       />
 
+      {spatialReady && viewerRef.current && items.length > 0 && (
+        <SplatItemMarkers
+          viewer={viewerRef.current}
+          items={items}
+          highlightedItemId={highlightedItemId}
+          onHighlight={onHighlight}
+          enabled={!loading}
+        />
+      )}
+
       {loading && (
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/40 backdrop-blur-sm">
+        <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/40 backdrop-blur-sm">
           <Loader2 className="size-10 animate-spin text-primary" />
           <p className="text-sm text-muted-foreground">
             Loading reconstruction…
@@ -120,39 +139,16 @@ export function SplatRenderer({
         </div>
       )}
 
-      <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 text-center">
+      <div className="pointer-events-none absolute bottom-6 left-1/2 z-[6] -translate-x-1/2 text-center">
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
           3D Gaussian Splat · {roomName}
         </p>
-      </div>
-
-      <AnimatePresence>
-        {highlightedItem && (
-          <motion.div
-            key={highlightedItem.id}
-            initial={{ opacity: 0, scale: 0.6 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.6 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className="pointer-events-none absolute"
-            style={{
-              left: `${highlightedItem.marker.x * 100}%`,
-              top: `${highlightedItem.marker.y * 100}%`,
-              transform: "translate(-50%, -50%)",
-            }}
-          >
-            <div className="relative flex flex-col items-center">
-              <span className="absolute h-10 w-10 animate-ping rounded-full bg-primary/40" />
-              <span className="h-3 w-3 rounded-full bg-primary ring-4 ring-primary/30" />
-              <div className="mt-3 whitespace-nowrap rounded-full border border-primary/40 bg-primary/15 px-3 py-1 backdrop-blur-md">
-                <span className="text-xs text-primary-foreground/90">
-                  <span className="text-primary">●</span> {highlightedItem.name}
-                </span>
-              </div>
-            </div>
-          </motion.div>
+        {spatialReady && items.length > 0 && (
+          <p className="mt-1 text-[10px] text-muted-foreground/70">
+            Hover items for labels · click to pin
+          </p>
         )}
-      </AnimatePresence>
+      </div>
     </div>
   );
 }

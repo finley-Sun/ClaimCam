@@ -39,7 +39,6 @@ export function PropertyView({
   const logs = LOGS_BY_USER[userType];
   const log: TimeframeLog = logs.find((l) => l.id === activeLogId) ?? logs[0];
   const isDamage = log.type === "damage";
-  const highlightedItem = room.items.find((i) => i.id === highlightedItemId) ?? null;
   const splatUrl = resolveSplatUrl(room.id, log.type);
   const [splatReady, setSplatReady] = useState(false);
 
@@ -51,8 +50,10 @@ export function PropertyView({
           key={`${room.id}-${log.id}`}
           roomName={room.name}
           splatUrl={splatUrl}
+          items={room.items}
           isDamage={isDamage}
-          highlightedItem={highlightedItem}
+          highlightedItemId={highlightedItemId}
+          onHighlight={onHighlight}
           onReadyChange={setSplatReady}
         />
 

@@ -16,8 +16,10 @@ export type InsuredItem = {
   coverage: number;
   category: string;
   hasEvidence: boolean;
-  // Normalized position of the highlight marker over the splat scene.
+  // Normalized screen hint for raycast placement onto the splat surface.
   marker: { x: number; y: number };
+  // Optional fixed world anchor [x, y, z] in splat space (overrides marker raycast).
+  position?: [number, number, number];
 };
 
 export type Room = {
@@ -121,7 +123,17 @@ export const ROOMS: Room[] = [
         coverage: 1500,
         category: "Electronics",
         hasEvidence: true,
-        marker: { x: 0.32, y: 0.42 },
+        marker: { x: 0.5, y: 0.36 },
+      },
+      {
+        id: "curtains",
+        name: "Window Curtains",
+        model: "Linen blackout drapes",
+        marketValue: 420,
+        coverage: 350,
+        category: "Furnishings",
+        hasEvidence: false,
+        marker: { x: 0.82, y: 0.34 },
       },
       {
         id: "speaker",
@@ -131,17 +143,17 @@ export const ROOMS: Room[] = [
         coverage: 400,
         category: "Audio",
         hasEvidence: true,
-        marker: { x: 0.66, y: 0.55 },
+        marker: { x: 0.68, y: 0.5 },
       },
       {
         id: "sofa",
-        name: "Sectional Sofa",
+        name: "Sectional Couch",
         model: "West Elm Harmony",
         marketValue: 2400,
         coverage: 2000,
         category: "Furniture",
         hasEvidence: false,
-        marker: { x: 0.5, y: 0.74 },
+        marker: { x: 0.5, y: 0.68 },
       },
       {
         id: "console",
@@ -151,7 +163,7 @@ export const ROOMS: Room[] = [
         coverage: 650,
         category: "Electronics",
         hasEvidence: true,
-        marker: { x: 0.24, y: 0.6 },
+        marker: { x: 0.35, y: 0.52 },
       },
     ],
     structure: [

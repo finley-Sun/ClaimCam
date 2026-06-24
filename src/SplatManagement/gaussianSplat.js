@@ -197,4 +197,15 @@ export class GaussianSplatViewer {
       }
     }
   }
+
+  getMkViewer() {
+    return this.viewer;
+  }
+
+  getContainerSize() {
+    return {
+      width: this.container.clientWidth,
+      height: this.container.clientHeight,
+    };
+  }
 }
