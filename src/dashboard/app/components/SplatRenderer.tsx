@@ -29,9 +29,12 @@ export function SplatRenderer({
 }: SplatRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<GaussianSplatViewer | null>(null);
+  const onReadyRef = useRef(onReadyChange);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [spatialReady, setSpatialReady] = useState(false);
+
+  onReadyRef.current = onReadyChange;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -43,12 +46,11 @@ export function SplatRenderer({
 
     const viewer = viewerRef.current;
     let cancelled = false;
-    let vrPreloadTimer = 0;
 
     setLoading(true);
     setError(null);
     setSpatialReady(false);
-    onReadyChange?.(false);
+    onReadyRef.current?.(false);
 
     (async () => {
       try {
@@ -57,23 +59,7 @@ export function SplatRenderer({
 
         if (!cancelled) {
           setLoading(false);
-          onReadyChange?.(true);
-        }
-
-        // Defer VR preload so the 2D splat gets bandwidth/GPU first.
-        vrPreloadTimer = window.setTimeout(() => {
-          if (cancelled) return;
-          import("../../../SplatManagement/superSplatVR.js")
-            .then(({ prepareSuperSplatVR }) =>
-              prepareSuperSplatVR(splatUrl).catch((err) => {
-                console.warn("[VR] background preload failed:", err);
-              }),
-            );
-        }, 2000);
-
-        if (!cancelled) {
-          await new Promise((r) => requestAnimationFrame(r));
-          await new Promise((r) => requestAnimationFrame(r));
+          onReadyRef.current?.(true);
           setSpatialReady(true);
         }
       } catch (err) {
@@ -81,18 +67,17 @@ export function SplatRenderer({
         if (!cancelled) {
           setError("Could not load 3D reconstruction");
           setLoading(false);
-          onReadyChange?.(false);
+          onReadyRef.current?.(false);
         }
       }
     })();
 
     return () => {
       cancelled = true;
-      clearTimeout(vrPreloadTimer);
       setSpatialReady(false);
-      onReadyChange?.(false);
+      onReadyRef.current?.(false);
     };
-  }, [splatUrl, onReadyChange]);
+  }, [splatUrl]);
 
   useEffect(() => {
     return () => {

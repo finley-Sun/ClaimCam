@@ -8,14 +8,6 @@ import {
 import type { InsuredItem } from "./data";
 import { cn } from "./ui/utils";
 
-type ScreenMarker = {
-  id: string;
-  name: string;
-  x: number;
-  y: number;
-  visible: boolean;
-};
-
 type SplatItemMarkersProps = {
   viewer: GaussianSplatViewer;
   items: InsuredItem[];
@@ -35,7 +27,10 @@ export function SplatItemMarkers({
 }: SplatItemMarkersProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const worldPositionsRef = useRef<Map<string, import("three").Vector3>>(new Map());
-  const [markers, setMarkers] = useState<ScreenMarker[]>([]);
+  const markerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const screenPositionsRef = useRef<Map<string, { x: number; y: number; visible: boolean }>>(
+    new Map(),
+  );
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,6 +48,7 @@ export function SplatItemMarkers({
     );
   }, [viewer, items, enabled]);
 
+  // Update marker screen positions via DOM — avoid setState every frame.
   useEffect(() => {
     if (!enabled) return;
 
@@ -64,23 +60,22 @@ export function SplatItemMarkers({
       const camera = mkViewer?.camera;
 
       if (mkViewer && camera && width > 0 && height > 0) {
-        const next: ScreenMarker[] = [];
-
         for (const item of items) {
           const world = worldPositionsRef.current.get(item.id);
-          if (!world) continue;
+          const el = markerRefs.current.get(item.id);
+          if (!world || !el) continue;
 
           const projected = projectWorldToScreen(world, camera, width, height);
-          next.push({
-            id: item.id,
-            name: item.name,
-            x: projected.x,
-            y: projected.y,
-            visible: projected.visible,
-          });
-        }
+          screenPositionsRef.current.set(item.id, projected);
 
-        setMarkers(next);
+          if (projected.visible) {
+            el.style.display = "block";
+            el.style.left = `${projected.x}px`;
+            el.style.top = `${projected.y}px`;
+          } else {
+            el.style.display = "none";
+          }
+        }
       }
 
       raf = requestAnimationFrame(tick);
@@ -99,15 +94,17 @@ export function SplatItemMarkers({
 
     let closest: { id: string; dist: number } | null = null;
 
-    for (const m of markers) {
-      if (!m.visible) continue;
-      const dist = Math.hypot(m.x - px, m.y - py);
+    for (const item of items) {
+      const pos = screenPositionsRef.current.get(item.id);
+      if (!pos?.visible) continue;
+      const dist = Math.hypot(pos.x - px, pos.y - py);
       if (dist <= HOVER_RADIUS_PX && (!closest || dist < closest.dist)) {
-        closest = { id: m.id, dist };
+        closest = { id: item.id, dist };
       }
     }
 
-    setHoveredId(closest?.id ?? null);
+    const next = closest?.id ?? null;
+    setHoveredId((prev) => (prev === next ? prev : next));
   };
 
   const activeId = hoveredId ?? highlightedItemId;
@@ -122,17 +119,19 @@ export function SplatItemMarkers({
         if (hoveredId) onHighlight(hoveredId);
       }}
     >
-      {markers.map((m) => {
-        if (!m.visible) return null;
-
-        const isActive = activeId === m.id;
+      {items.map((item) => {
+        const isActive = activeId === item.id;
         const showLabel = isActive;
 
         return (
           <div
-            key={m.id}
+            key={item.id}
+            ref={(el) => {
+              if (el) markerRefs.current.set(item.id, el);
+              else markerRefs.current.delete(item.id);
+            }}
             className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: m.x, top: m.y }}
+            style={{ display: "none" }}
           >
             <div className="relative flex flex-col items-center">
               {isActive && (
@@ -156,7 +155,7 @@ export function SplatItemMarkers({
                     className="pointer-events-none mt-2 whitespace-nowrap rounded-full border border-primary/40 bg-primary/15 px-3 py-1 backdrop-blur-md"
                   >
                     <span className="text-xs text-primary-foreground/90">
-                      <span className="text-primary">●</span> {m.name}
+                      <span className="text-primary">●</span> {item.name}
                     </span>
                   </motion.div>
                 )}

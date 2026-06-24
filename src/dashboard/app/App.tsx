@@ -53,7 +53,7 @@ export default function App() {
         <Sidebar page={page} onNavigate={setPage} />
 
         <main className="flex min-w-0 flex-1">
-          {page === "property" ? (
+          {page === "property" && userType !== null ? (
             <PropertyView
               userType={effectiveUser}
               onSwitchPortal={handleSwitchPortal}

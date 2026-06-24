@@ -47,7 +47,7 @@ export function PropertyView({
       {/* Renderer stage */}
       <div className="relative min-w-0 flex-1 overflow-hidden">
         <SplatRenderer
-          key={`${room.id}-${log.id}`}
+          key={splatUrl}
           roomName={room.name}
           splatUrl={splatUrl}
           items={room.items}

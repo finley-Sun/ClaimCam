@@ -22,12 +22,19 @@ export class GaussianSplatViewer {
     this.viewer = null;
     this._xrActive = false;
     this._activeRoot = null;
+    this._loadedUrl = null;
 
     this._resizeObserver = new ResizeObserver(() => this._onResize());
     this._resizeObserver.observe(this.container);
   }
 
  async load(url) {
+    if (this.viewer && this._loadedUrl === url) {
+      return;
+    }
+
+    this._loadedUrl = url;
+
     // Kill the old viewer by orphaning its root entirely
     if (this.viewer) {
       const oldViewer = this.viewer;
@@ -81,6 +88,8 @@ export class GaussianSplatViewer {
         position: [0, 0, 0],
         rotation: SPLAT_IDENTITY_ROTATION,
         scale: [1, 1, 1],
+        progressiveLoad: true,
+        showLoadingUI: false,
       });
 
       this.viewer.start();
@@ -93,6 +102,7 @@ export class GaussianSplatViewer {
         this.container.removeChild(root);
       }
       this._activeRoot = null;
+      this._loadedUrl = null;
       throw e;
     }
   }
@@ -167,6 +177,7 @@ export class GaussianSplatViewer {
 
     this.viewer = null;
     this._activeRoot = null;
+    this._loadedUrl = null;
 
     try { oldViewer.stop(); } catch (e) {}
 
