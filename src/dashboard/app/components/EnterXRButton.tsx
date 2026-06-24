@@ -6,8 +6,10 @@ import {
   exitSuperSplatVR,
   hasActiveSuperSplatVR,
   isSuperSplatVRReady,
+  isSuperSplatVRLoading,
   onSuperSplatXREnd,
   prepareSuperSplatVR,
+  warmSuperSplatVR,
 } from "../../../SplatManagement/superSplatVR.js";
 import {
   destroySplatForXR,
@@ -24,32 +26,31 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
   const [loadingVR, setLoadingVR] = useState(false);
   const [headsetReady, setHeadsetReady] = useState(isSuperSplatVRReady());
 
+  const syncHeadsetReady = () => {
+    setHeadsetReady(isSuperSplatVRReady());
+    setLoadingVR(isSuperSplatVRLoading());
+  };
+
   useEffect(() => {
     onSuperSplatXREnd(async () => {
       setInXR(false);
       setLoadingVR(false);
       await restoreSplatAfterXR();
+      syncHeadsetReady();
     });
   }, []);
 
   useEffect(() => {
-    if (!vrReady) {
+    if (!vrReady || !splatUrl) {
       setHeadsetReady(false);
+      setLoadingVR(false);
       return;
     }
 
-    if (isSuperSplatVRReady()) {
-      setHeadsetReady(true);
-      return;
-    }
+    syncHeadsetReady();
+    warmSuperSplatVR(splatUrl);
 
-    const id = window.setInterval(() => {
-      if (isSuperSplatVRReady()) {
-        setHeadsetReady(true);
-        clearInterval(id);
-      }
-    }, 400);
-
+    const id = window.setInterval(syncHeadsetReady, 350);
     return () => clearInterval(id);
   }, [vrReady, splatUrl]);
 
@@ -102,7 +103,7 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
   const label =
     inXR || hasActiveSuperSplatVR()
       ? "Exit to Browser"
-      : loadingVR
+      : loadingVR || (vrReady && !headsetReady)
         ? "Preparing VR…"
         : headsetReady
           ? "Enter XR"

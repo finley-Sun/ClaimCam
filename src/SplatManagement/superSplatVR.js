@@ -8,6 +8,7 @@ let iframe = null;
 let ready = false;
 let loading = false;
 let currentUrl = null;
+let preparePromise = null;
 let xrActive = false;
 let onXREndCallback = null;
 
@@ -43,6 +44,7 @@ function buildViewerUrl(splatUrl) {
     url.searchParams.set('content', splatUrl);
     url.searchParams.set('noui', '');
     url.searchParams.set('noanim', '');
+    url.searchParams.set('nofx', '');
     url.searchParams.set('renderer', 'webgl');
     return url.toString();
 }
@@ -73,34 +75,17 @@ if (typeof window !== 'undefined') {
     window.addEventListener('message', handleMessage);
 }
 
-/**
- * Pre-load the PlayCanvas gsplat viewer while the 2D splat is visible.
- */
-export async function prepareSuperSplatVR(splatUrl) {
-    if (!splatUrl) return;
+function waitForVRReady(frame, timeoutMs = 180000) {
+    return new Promise((resolve, reject) => {
+        if (ready) {
+            resolve();
+            return;
+        }
 
-    if (currentUrl === splatUrl && (ready || loading)) {
-        return;
-    }
-
-    await teardownSuperSplatVR();
-
-    currentUrl = splatUrl;
-    ready = false;
-    loading = true;
-
-    const frame = ensureIframe();
-    frame.src = buildViewerUrl(splatUrl);
-
-    await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
             cleanup();
             reject(new Error('SuperSplat VR viewer timed out while loading'));
-        }, 180000);
-
-        const onLoad = () => {
-            // iframe document loaded; gsplat may still be loading
-        };
+        }, timeoutMs);
 
         const onReady = (event) => {
             if (event.source !== frame.contentWindow) return;
@@ -111,21 +96,66 @@ export async function prepareSuperSplatVR(splatUrl) {
 
         const cleanup = () => {
             clearTimeout(timeout);
-            frame.removeEventListener('load', onLoad);
             window.removeEventListener('message', onReady);
         };
 
-        frame.addEventListener('load', onLoad);
         window.addEventListener('message', onReady);
+    });
+}
 
-        if (ready) {
-            cleanup();
-            resolve();
-        }
-    }).catch((err) => {
-        loading = false;
-        console.warn('[SuperSplat VR] prepare failed:', err);
-        throw err;
+function startPrepare(splatUrl) {
+    currentUrl = splatUrl;
+    ready = false;
+    loading = true;
+
+    const frame = ensureIframe();
+    frame.src = buildViewerUrl(splatUrl);
+
+    preparePromise = waitForVRReady(frame)
+        .catch((err) => {
+            loading = false;
+            preparePromise = null;
+            console.warn('[SuperSplat VR] prepare failed:', err);
+            throw err;
+        });
+
+    return preparePromise;
+}
+
+/**
+ * Pre-load the PlayCanvas gsplat viewer while the 2D splat is visible.
+ */
+export async function prepareSuperSplatVR(splatUrl) {
+    if (!splatUrl) return;
+
+    if (currentUrl === splatUrl && ready) {
+        return;
+    }
+
+    if (currentUrl === splatUrl && preparePromise) {
+        return preparePromise;
+    }
+
+    if (currentUrl !== splatUrl) {
+        await teardownSuperSplatVR();
+    }
+
+    return startPrepare(splatUrl);
+}
+
+/**
+ * Fire-and-forget VR warm-up after the 2D splat is already on screen.
+ * Reuses the same in-flight prepare promise if warm/prepare was already started.
+ */
+export function warmSuperSplatVR(splatUrl) {
+    if (!splatUrl) return;
+
+    if (currentUrl === splatUrl && (ready || preparePromise)) {
+        return;
+    }
+
+    prepareSuperSplatVR(splatUrl).catch((err) => {
+        console.warn('[SuperSplat VR] background warm failed:', err);
     });
 }
 
@@ -158,6 +188,10 @@ export function isSuperSplatVRReady() {
     return ready;
 }
 
+export function isSuperSplatVRLoading() {
+    return loading && !ready;
+}
+
 export function exitSuperSplatVR() {
     iframe?.contentWindow?.postMessage({ type: 'claimcam-end-vr' }, '*');
 }
@@ -171,6 +205,7 @@ export async function teardownSuperSplatVR() {
     loading = false;
     xrActive = false;
     currentUrl = null;
+    preparePromise = null;
 
     if (iframe) {
         iframe.remove();
