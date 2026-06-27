@@ -51,6 +51,9 @@ export function SplatRenderer({
     setError(null);
     setSpatialReady(false);
     onReadyRef.current?.(false);
+    viewer.setReadyCallback(() => {
+      if (!cancelled) onReadyRef.current?.(true);
+    });
 
     (async () => {
       try {

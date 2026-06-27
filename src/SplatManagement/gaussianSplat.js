@@ -93,6 +93,7 @@ export class GaussianSplatViewer {
       });
 
       this.viewer.start();
+      this._readyCallback?.();
       this.viewer.renderer.setClearColor(0xe2edd8, 1);
 
       const splatMesh = this.viewer.splatMesh;
@@ -101,6 +102,7 @@ export class GaussianSplatViewer {
       }
 
       this._centerCameraInRoom();
+      this._ensureXR();
       console.log('[GaussianSplat] loaded:', url);
     } catch (e) {
       console.error('[GaussianSplat] load failed:', e);
@@ -230,6 +232,10 @@ export class GaussianSplatViewer {
     this._onXRSessionEnd = callback;
   }
 
+  setReadyCallback(callback) {
+    this._readyCallback = callback;
+  }
+
   _ensureXR() {
     const viewer = this.viewer;
     const renderer = viewer?.renderer;
@@ -239,12 +245,22 @@ export class GaussianSplatViewer {
 
     if (!this._xrListenersAttached) {
       renderer.xr.addEventListener('sessionstart', () => {
-        if (viewer) viewer.webXRActive = true;
+        if (!viewer) return;
+        viewer.webXRActive = true;
         this._xrActive = true;
+        // mkkellogg uses rAF when webXRMode is None — switch to XR loop for headset.
+        try { viewer.stop(); } catch (e) { /* ignore */ }
+        viewer.renderer.setAnimationLoop(viewer.selfDrivenUpdateFunc);
+        viewer.selfDrivenModeRunning = true;
       });
       renderer.xr.addEventListener('sessionend', () => {
-        if (viewer) viewer.webXRActive = false;
+        if (!viewer) return;
+        viewer.webXRActive = false;
         this._xrActive = false;
+        viewer.renderer.setAnimationLoop(null);
+        if (viewer.selfDrivenMode) {
+          try { viewer.start(); } catch (e) { /* ignore */ }
+        }
         this._onXRSessionEnd?.();
       });
       this._xrListenersAttached = true;
@@ -269,11 +285,10 @@ export class GaussianSplatViewer {
       throw new Error('WebXR is not available in this browser');
     }
 
-    const sessionInit = {
-      optionalFeatures: ['local-floor', 'bounded-floor', 'layers'],
-    };
-
-    navigator.xr.requestSession('immersive-vr', sessionInit)
+    // Minimal session options — extra features slow Quest negotiation.
+    navigator.xr.requestSession('immersive-vr', {
+      optionalFeatures: ['local-floor'],
+    })
       .then(async (session) => {
         this.viewer.webXRActive = true;
         this._xrActive = true;
