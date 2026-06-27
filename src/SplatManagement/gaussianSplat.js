@@ -94,6 +94,12 @@ export class GaussianSplatViewer {
 
       this.viewer.start();
       this.viewer.renderer.setClearColor(0xe2edd8, 1);
+
+      const splatMesh = this.viewer.splatMesh;
+      if (splatMesh) {
+        splatMesh.frustumCulled = false;
+      }
+
       this._centerCameraInRoom();
       console.log('[GaussianSplat] loaded:', url);
     } catch (e) {
@@ -218,5 +224,75 @@ export class GaussianSplatViewer {
       width: this.container.clientWidth,
       height: this.container.clientHeight,
     };
+  }
+
+  setOnXRSessionEnd(callback) {
+    this._onXRSessionEnd = callback;
+  }
+
+  _ensureXR() {
+    const viewer = this.viewer;
+    const renderer = viewer?.renderer;
+    if (!renderer) return false;
+
+    renderer.xr.enabled = true;
+
+    if (!this._xrListenersAttached) {
+      renderer.xr.addEventListener('sessionstart', () => {
+        if (viewer) viewer.webXRActive = true;
+        this._xrActive = true;
+      });
+      renderer.xr.addEventListener('sessionend', () => {
+        if (viewer) viewer.webXRActive = false;
+        this._xrActive = false;
+        this._onXRSessionEnd?.();
+      });
+      this._xrListenersAttached = true;
+    }
+
+    return true;
+  }
+
+  /**
+   * Enter headset VR using the already-loaded splat. Call synchronously from
+   * the user's click/tap — do not await other work before this runs.
+   */
+  enterImmersiveVR() {
+    if (!this._ensureXR()) {
+      throw new Error('Splat viewer is not ready for VR');
+    }
+
+    const renderer = this.viewer.renderer;
+    if (renderer.xr.isPresenting) return;
+
+    if (!navigator.xr?.requestSession) {
+      throw new Error('WebXR is not available in this browser');
+    }
+
+    const sessionInit = {
+      optionalFeatures: ['local-floor', 'bounded-floor', 'layers'],
+    };
+
+    navigator.xr.requestSession('immersive-vr', sessionInit)
+      .then(async (session) => {
+        this.viewer.webXRActive = true;
+        this._xrActive = true;
+        await renderer.xr.setSession(session);
+      })
+      .catch((err) => {
+        this.viewer.webXRActive = false;
+        this._xrActive = false;
+        console.error('[GaussianSplat] VR session failed:', err);
+        this._onXRSessionEnd?.();
+      });
+  }
+
+  exitImmersiveVR() {
+    const session = this.viewer?.renderer?.xr?.getSession?.();
+    if (session) session.end();
+  }
+
+  isInImmersiveVR() {
+    return !!this.viewer?.renderer?.xr?.isPresenting;
   }
 }

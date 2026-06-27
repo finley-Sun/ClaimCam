@@ -61,22 +61,6 @@ export function SplatRenderer({
           setLoading(false);
           onReadyRef.current?.(true);
           setSpatialReady(true);
-
-          // Warm the VR iframe in the background once 2D is interactive.
-          // The .spz should already be in the HTTP cache from the 2D viewer.
-          const warmVR = () => {
-            import("../../../SplatManagement/superSplatVR.js").then(
-              ({ warmSuperSplatVR }) => warmSuperSplatVR(splatUrl),
-            );
-          };
-          import("../../../SplatManagement/xrDevice.js").then(({ prefersSequentialVRLoad }) => {
-            if (prefersSequentialVRLoad()) return;
-            if ("requestIdleCallback" in window) {
-              window.requestIdleCallback(warmVR, { timeout: 2500 });
-            } else {
-              window.setTimeout(warmVR, 1200);
-            }
-          });
         }
       } catch (err) {
         console.error("[SplatRenderer] load failed:", err);
