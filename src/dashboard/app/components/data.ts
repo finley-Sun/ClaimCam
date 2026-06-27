@@ -13,12 +13,14 @@ export type InsuredItem = {
   name: string;
   model: string;
   marketValue: number;
+  replacementValue: number;
   coverage: number;
   category: string;
   hasEvidence: boolean;
-  // Floor-plan placement within the splat bounds: x = left→right, y = back→forward, h = height.
+  purchaseDate?: string;
+  aiAutofilled?: boolean;
+  // Floor-plan placement within splat bounds: x = left→right, y = back→forward, h = height.
   marker: { x: number; y: number; h?: number };
-  // Optional fixed world anchor [x, y, z] in splat space (overrides marker raycast).
   position?: [number, number, number];
 };
 
@@ -65,6 +67,11 @@ export type StructureRecord = {
   detail: string;
   rebuildCost: number;
   updated: string;
+  // Extended fields for the new card design
+  area?: string;
+  costFormula?: string;
+  source?: string;
+  installedDate?: string;
 };
 
 // External liability exposures on the property (homeowner policy liability).
@@ -118,86 +125,94 @@ export const ROOMS: Room[] = [
       {
         id: "tv",
         name: "OLED Television",
-        model: "LG C3 65\"",
-        marketValue: 1800,
+        model: 'LG C3 65" · OLED65G2PUA',
+        marketValue: 1400,
+        replacementValue: 1800,
         coverage: 1500,
         category: "Electronics",
         hasEvidence: true,
+        purchaseDate: "May 23, 2025",
+        aiAutofilled: true,
         marker: { x: 0.55, y: 0.84, h: 0.52 },
       },
       {
-        id: "curtains",
-        name: "Window Curtains",
-        model: "Linen blackout drapes",
+        id: "monitor",
+        name: "Computer Monitor",
+        model: 'Dell UltraSharp U2723QE 27" · S/N 7KXQ2H3',
         marketValue: 420,
-        coverage: 350,
-        category: "Furnishings",
-        hasEvidence: false,
-        marker: { x: 0.9, y: 0.72, h: 0.58 },
+        replacementValue: 680,
+        coverage: 600,
+        category: "Electronics",
+        hasEvidence: true,
+        purchaseDate: "Jan 18, 2024",
+        aiAutofilled: true,
+        marker: { x: 0.38, y: 0.78, h: 0.45 },
       },
       {
         id: "speaker",
         name: "Smart Speaker",
-        model: "Sonos Era 300",
-        marketValue: 450,
+        model: "Sonos Five · S/N F5C9A41",
+        marketValue: 390,
+        replacementValue: 549,
         coverage: 400,
-        category: "Audio",
+        category: "Electronics",
         hasEvidence: true,
+        purchaseDate: "Nov 30, 2023",
+        aiAutofilled: true,
         marker: { x: 0.74, y: 0.8, h: 0.3 },
-      },
-      {
-        id: "sofa",
-        name: "Sectional Couch",
-        model: "West Elm Harmony",
-        marketValue: 2400,
-        coverage: 2000,
-        category: "Furniture",
-        hasEvidence: false,
-        marker: { x: 0.64, y: 0.34, h: 0.24 },
       },
       {
         id: "console",
         name: "Game Console",
-        model: "PlayStation 5 Pro",
-        marketValue: 700,
-        coverage: 650,
+        model: "Sony PlayStation 5 · S/N CFI1215A07X",
+        marketValue: 400,
+        replacementValue: 499,
+        coverage: 450,
         category: "Electronics",
         hasEvidence: true,
+        purchaseDate: "Dec 2, 2024",
+        aiAutofilled: true,
         marker: { x: 0.42, y: 0.78, h: 0.2 },
+      },
+      {
+        id: "sofa",
+        name: "Sectional Sofa",
+        model: "IKEA VIMLE 4-seat with chaise · Art. 793.995.45",
+        marketValue: 2000,
+        replacementValue: 2400,
+        coverage: 2000,
+        category: "Furniture",
+        hasEvidence: false,
+        purchaseDate: "May 23, 2025",
+        aiAutofilled: true,
+        marker: { x: 0.64, y: 0.34, h: 0.24 },
+      },
+      {
+        id: "piano",
+        name: "Upright Piano",
+        model: "Yamaha U1 · S/N 6125473",
+        marketValue: 6500,
+        replacementValue: 9200,
+        coverage: 8000,
+        category: "Instrument",
+        hasEvidence: false,
+        purchaseDate: "Aug 12, 2019",
+        aiAutofilled: false,
+        marker: { x: 0.18, y: 0.55, h: 0.38 },
       },
     ],
     structure: [
       {
         id: "lr-floor",
-        name: "White-Oak Flooring",
+        name: "Flooring",
         icon: "Ruler",
-        detail: "Wide-plank, site-finished",
-        rebuildCost: 9800,
+        detail: "White oak · wide-plank · matte finish",
+        rebuildCost: 5760,
         updated: "2024-09-12",
-      },
-      {
-        id: "lr-molding",
-        name: "Crown Molding & Trim",
-        icon: "Hammer",
-        detail: "Custom millwork, coffered ceiling",
-        rebuildCost: 6400,
-        updated: "2024-09-12",
-      },
-      {
-        id: "lr-electrical",
-        name: "Electrical & Lighting",
-        icon: "Zap",
-        detail: "Recessed LED, smart switches",
-        rebuildCost: 3200,
-        updated: "2021-11-18",
-      },
-      {
-        id: "lr-windows",
-        name: "Picture Windows",
-        icon: "Ruler",
-        detail: "Triple-pane, custom size",
-        rebuildCost: 5600,
-        updated: "2024-09-12",
+        area: "320 sq ft",
+        costFormula: "$18 / sq ft × 320 sq ft",
+        source: "From contractor invoice",
+        installedDate: "Mar 2023",
       },
     ],
     condition: [
@@ -232,46 +247,8 @@ export const ROOMS: Room[] = [
     name: "Bedroom",
     icon: "BedDouble",
     kind: "interior",
-    items: [
-      {
-        id: "mattress",
-        name: "King Mattress",
-        model: "Casper Wave Hybrid",
-        marketValue: 2200,
-        coverage: 1800,
-        category: "Furniture",
-        hasEvidence: true,
-        marker: { x: 0.5, y: 0.6 },
-      },
-      {
-        id: "watch",
-        name: "Luxury Watch",
-        model: "Omega Seamaster",
-        marketValue: 5400,
-        coverage: 5000,
-        category: "Valuables",
-        hasEvidence: true,
-        marker: { x: 0.7, y: 0.4 },
-      },
-    ],
-    structure: [
-      {
-        id: "bd-closet",
-        name: "Walk-in Closet Build-out",
-        icon: "Hammer",
-        detail: "Custom shelving system",
-        rebuildCost: 5200,
-        updated: "2023-03-14",
-      },
-      {
-        id: "bd-electrical",
-        name: "Electrical & Lighting",
-        icon: "Zap",
-        detail: "Dimmable sconces, ceiling fan",
-        rebuildCost: 2100,
-        updated: "2021-11-18",
-      },
-    ],
+    items: [],
+    structure: [],
     condition: [
       {
         id: "bd-walls",
@@ -296,62 +273,8 @@ export const ROOMS: Room[] = [
     name: "Kitchen",
     icon: "CookingPot",
     kind: "interior",
-    items: [
-      {
-        id: "fridge",
-        name: "Smart Refrigerator",
-        model: "Samsung Family Hub",
-        marketValue: 3200,
-        coverage: 2800,
-        category: "Appliances",
-        hasEvidence: true,
-        marker: { x: 0.4, y: 0.45 },
-      },
-      {
-        id: "espresso",
-        name: "Espresso Machine",
-        model: "Breville Oracle Touch",
-        marketValue: 2500,
-        coverage: 2200,
-        category: "Appliances",
-        hasEvidence: false,
-        marker: { x: 0.68, y: 0.58 },
-      },
-    ],
-    structure: [
-      {
-        id: "kt-plumbing",
-        name: "Plumbing",
-        icon: "Droplets",
-        detail: "Copper + PEX, pot filler, disposal",
-        rebuildCost: 6800,
-        updated: "2023-05-02",
-      },
-      {
-        id: "kt-cabinets",
-        name: "Cabinetry & Counters",
-        icon: "Hammer",
-        detail: "Custom maple, quartz counters",
-        rebuildCost: 18400,
-        updated: "2024-09-12",
-      },
-      {
-        id: "kt-electrical",
-        name: "Electrical",
-        icon: "Zap",
-        detail: "Dedicated circuits, under-cabinet LED",
-        rebuildCost: 3600,
-        updated: "2021-11-18",
-      },
-      {
-        id: "kt-hvac",
-        name: "Range Hood & Vent",
-        icon: "Wind",
-        detail: "Ducted, 600 CFM",
-        rebuildCost: 1900,
-        updated: "2024-09-12",
-      },
-    ],
+    items: [],
+    structure: [],
     condition: [
       {
         id: "kt-appliances",
@@ -376,36 +299,8 @@ export const ROOMS: Room[] = [
     name: "Bathroom",
     icon: "Bath",
     kind: "interior",
-    items: [
-      {
-        id: "mirror",
-        name: "Smart Mirror",
-        model: "HiMirror Slide",
-        marketValue: 600,
-        coverage: 500,
-        category: "Electronics",
-        hasEvidence: false,
-        marker: { x: 0.5, y: 0.38 },
-      },
-    ],
-    structure: [
-      {
-        id: "ba-plumbing",
-        name: "Plumbing & Fixtures",
-        icon: "Droplets",
-        detail: "Rain shower, freestanding tub",
-        rebuildCost: 7400,
-        updated: "2023-05-02",
-      },
-      {
-        id: "ba-tile",
-        name: "Tile Work",
-        icon: "Hammer",
-        detail: "Porcelain floor + wall, heated floor",
-        rebuildCost: 5900,
-        updated: "2024-09-12",
-      },
-    ],
+    items: [],
+    structure: [],
     condition: [
       {
         id: "ba-fixtures",
@@ -417,94 +312,11 @@ export const ROOMS: Room[] = [
       },
     ],
   },
-  {
-    id: "pool",
-    name: "Pool & Patio",
-    icon: "Waves",
-    kind: "exterior",
-    risk: { level: "high", detail: "18×36 ft in-ground · fenced, alarm-equipped" },
-    items: [
-      {
-        id: "pool-heater",
-        name: "Pool Heater",
-        model: "Pentair MasterTemp 400",
-        marketValue: 2600,
-        coverage: 2300,
-        category: "Equipment",
-        hasEvidence: true,
-        marker: { x: 0.72, y: 0.62 },
-      },
-    ],
-    structure: [
-      {
-        id: "pl-shell",
-        name: "Pool Shell & Decking",
-        icon: "Hammer",
-        detail: "Gunite shell, travertine deck",
-        rebuildCost: 42000,
-        updated: "2022-06-20",
-      },
-      {
-        id: "pl-equipment",
-        name: "Filtration & Plumbing",
-        icon: "Droplets",
-        detail: "Variable-speed pump, saltwater system",
-        rebuildCost: 8800,
-        updated: "2024-04-10",
-      },
-    ],
-    condition: [],
-  },
-  {
-    id: "front-walk",
-    name: "Front Walk & Drive",
-    icon: "Footprints",
-    kind: "exterior",
-    risk: { level: "moderate", detail: "Public-facing · slip & trip exposure" },
-    items: [],
-    structure: [
-      {
-        id: "fw-concrete",
-        name: "Concrete Walk & Driveway",
-        icon: "Ruler",
-        detail: "Stamped concrete, 620 sqft",
-        rebuildCost: 11200,
-        updated: "2023-08-05",
-      },
-    ],
-    condition: [],
-  },
-  {
-    id: "grounds",
-    name: "Garden & Trees",
-    icon: "Trees",
-    kind: "exterior",
-    risk: { level: "moderate", detail: "3 mature oaks · overhang near neighbor's roof" },
-    items: [],
-    structure: [
-      {
-        id: "gr-retaining",
-        name: "Retaining Wall",
-        icon: "Hammer",
-        detail: "Stone, 24 ft run",
-        rebuildCost: 9400,
-        updated: "2022-09-18",
-      },
-      {
-        id: "gr-irrigation",
-        name: "Irrigation System",
-        icon: "Droplets",
-        detail: "8-zone automatic, drip + spray",
-        rebuildCost: 3600,
-        updated: "2023-04-22",
-      },
-    ],
-    condition: [],
-  },
 ];
 
 export const TIMEFRAME_LOGS: TimeframeLog[] = [
   { id: "t0", date: "2026-06-01", label: "Latest capture", type: "capture" },
+  { id: "t4", date: "2026-05-01", label: "Living room fire", type: "damage" },
   { id: "t1", date: "2025-12-15", label: "Annual re-scan", type: "capture" },
   { id: "t2", date: "2025-10-31", label: "Fire damage splats", type: "damage" },
   { id: "t3", date: "2025-08-01", label: "Initial capture", type: "capture" },
@@ -534,6 +346,18 @@ export const CLAIMS: Claim[] = [
     description:
       "Burst pipe caused water damage to hardwood flooring and the sectional sofa base.",
     evidenceCount: 4,
+  },
+  {
+    id: "c5",
+    title: "Fire damage — living room",
+    room: "Living Room",
+    date: "2026-05-01",
+    status: "in_review",
+    progress: 40,
+    amount: 15128,
+    description:
+      "Fire damage to living room furnishings and electronics. 3DGS splat archive from prior scan used as pre-incident evidence.",
+    evidenceCount: 5,
   },
   {
     id: "c3",

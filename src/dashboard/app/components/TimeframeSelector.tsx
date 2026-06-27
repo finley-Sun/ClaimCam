@@ -1,4 +1,4 @@
-import { ChevronDown, Plus, Calendar, Flame, Camera, LogIn, LogOut } from "lucide-react";
+import { ChevronDown, Plus, Flame, Camera, LogIn, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -30,36 +30,38 @@ export function TimeframeSelector({ logs, activeLogId, onSelect }: TimeframeSele
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center gap-2.5 rounded-full border border-[var(--surface-glass-border)] bg-[var(--surface-glass-strong)] py-2 pl-3 pr-3.5 text-sm text-foreground backdrop-blur-xl transition-colors hover:border-primary/40">
-        <Calendar className="size-4 text-muted-foreground" />
-        <span className="tabular-nums">{active.date}</span>
-        {active.phase && <PhasePill phase={active.phase} />}
-        {active.type === "damage" && <Flame className="size-3.5 text-destructive" />}
+      <DropdownMenuTrigger className="flex items-center gap-2.5 rounded-full border border-[var(--surface-glass-border)] bg-[var(--surface-glass-strong)] py-3 pl-3 pr-3.5 text-sm text-foreground backdrop-blur-xl transition-colors hover:border-primary/40">
+        {active.type === "damage" ? (
+          <Flame className="size-4 text-destructive" />
+        ) : (
+          <Camera className="size-4 text-muted-foreground" />
+        )}
+        <span className="tabular-nums">
+          {active.type === "damage" ? "Fire damage: May 1, 2026" : "Good condition: Aug 1, 2025"}
+        </span>
         <ChevronDown className="size-4 text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
-        {logs.map((log) => (
-          <DropdownMenuItem
-            key={log.id}
-            onClick={() => onSelect(log.id)}
-            className="gap-2.5"
-          >
-            {log.type === "damage" ? (
-              <Flame className="size-4 text-destructive" />
-            ) : (
-              <Camera className="size-4 text-muted-foreground" />
-            )}
-            <div className="flex flex-col">
-              <span className="tabular-nums leading-tight">{log.date}</span>
-              <span className="text-xs text-muted-foreground leading-tight">{log.label}</span>
-            </div>
-            {log.phase && (
-              <span className="ml-auto">
-                <PhasePill phase={log.phase} />
-              </span>
-            )}
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuItem
+          onClick={() => onSelect(logs.find(l => l.type === "capture")?.id ?? logs[0].id)}
+          className="gap-2.5"
+        >
+          <Camera className="size-4 text-muted-foreground" />
+          <div className="flex flex-col">
+            <span className="tabular-nums leading-tight">Aug 1, 2025</span>
+            <span className="text-xs text-muted-foreground leading-tight">Good condition</span>
+          </div>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onSelect(logs.find(l => l.id === "t4")?.id ?? logs[0].id)}
+          className="gap-2.5"
+        >
+          <Flame className="size-4 text-destructive" />
+          <div className="flex flex-col">
+            <span className="tabular-nums leading-tight">May 1, 2026</span>
+            <span className="text-xs text-muted-foreground leading-tight">Living room fire</span>
+          </div>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() =>

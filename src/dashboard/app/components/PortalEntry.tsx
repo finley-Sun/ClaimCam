@@ -18,11 +18,11 @@ const PORTALS: {
     type: "homeowner",
     title: "Owner Portal",
     icon: Home,
-    blurb: "Protect your belongings, structure, and grounds — built around rebuild cost and liability.",
+    blurb: "Protect your home and belongings — document structure, grounds, and rebuild value before damage happens.",
     features: [
       { icon: Package, label: "Insured belongings" },
       { icon: FileStack, label: "Structure & rebuild value" },
-      { icon: ShieldAlert, label: "Grounds & liability scenes" },
+      { icon: ShieldAlert, label: "Yard, walkways & liability risks" },
     ],
   },
   {
@@ -31,8 +31,8 @@ const PORTALS: {
     icon: Building2,
     blurb: "Document your personal belongings and compare move-in vs move-out condition to protect your deposit.",
     features: [
-      { icon: Package, label: "Personal belongings" },
-      { icon: GitCompareArrows, label: "Move-in / move-out compare" },
+      { icon: Package, label: "Insured belongings" },
+      { icon: GitCompareArrows, label: "Move-in & move-out compare" },
       { icon: Boxes, label: "Fast, evidence-backed claims" },
     ],
   },
@@ -50,7 +50,7 @@ export function PortalEntry({ onSelect }: PortalEntryProps) {
         <img src={logo} alt="ClaimCam" className="h-9 w-auto object-contain" />
         <h1 className="mt-5 text-2xl">Choose your portal</h1>
         <p className="mt-1 max-w-md text-sm text-muted-foreground">
-          ClaimCam tailors your archive to how you're covered. Pick the experience that fits you.
+          Pick the portal that fits how you're covered — ClaimCam builds your 3D archive around it.
         </p>
       </motion.div>
 
@@ -63,9 +63,18 @@ export function PortalEntry({ onSelect }: PortalEntryProps) {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.08 * (i + 1) }}
-              onClick={() => onSelect(portal.type)}
-              className="group flex flex-col rounded-3xl border border-border bg-card p-6 text-left transition-all hover:border-primary/50 hover:shadow-[0_20px_50px_-20px_var(--brand-glow)]"
+              onClick={() => portal.type === "tenant" ? undefined : onSelect(portal.type)}
+              disabled={portal.type === "tenant"}
+              className={portal.type === "tenant"
+                ? "group relative flex flex-col rounded-3xl border border-border bg-card p-6 text-left opacity-50 cursor-not-allowed"
+                : "group flex flex-col rounded-3xl border border-border bg-card p-6 text-left transition-all hover:border-primary/50 hover:shadow-[0_20px_50px_-20px_var(--brand-glow)]"
+              }
             >
+              {portal.type === "tenant" && (
+                <span className="absolute right-4 top-4 rounded-full bg-[#66371C] px-2.5 py-1 text-[11px] text-[#FFB991] opacity-0 transition-opacity group-hover:opacity-100">
+                  Coming soon
+                </span>
+              )}
               <div className="flex items-center justify-between">
                 <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/15 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                   <Icon className="size-6" />

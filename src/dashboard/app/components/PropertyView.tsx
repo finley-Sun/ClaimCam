@@ -63,7 +63,6 @@ export function PropertyView({
           <TimeframeSelector logs={logs} activeLogId={activeLogId} onSelect={onLogChange} />
         </div>
 
-        {/* Damage banner */}
         {isDamage && (
           <div className="absolute left-1/2 top-5 z-10 -translate-x-1/2 rounded-full border border-destructive/40 bg-destructive/15 px-3 py-1 text-xs text-destructive backdrop-blur-md">
             Viewing incident capture · {log.label}
@@ -76,8 +75,8 @@ export function PropertyView({
           className={cn(
             "absolute right-5 top-5 z-10 flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm backdrop-blur-xl transition-colors",
             archiveOpen
-              ? "border-primary/50 bg-primary/20 text-primary"
-              : "border-[var(--surface-glass-border)] bg-[var(--surface-glass-strong)] text-foreground hover:border-primary/40",
+              ? "border-[#FF8A47] bg-[#FF8A47] text-white"
+              : "border-white/15 bg-[#363C43] text-white hover:border-white/20 hover:bg-[#505964]",
           )}
         >
           <Archive className="size-4" />
