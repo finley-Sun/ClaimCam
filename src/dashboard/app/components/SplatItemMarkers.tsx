@@ -140,7 +140,7 @@ export function SplatItemMarkers({
               className="relative flex flex-col items-center justify-center"
               style={{ width: HOVER_RADIUS_PX * 2, height: HOVER_RADIUS_PX * 2 }}
             >
-              {isActive && item.evidence && <ItemEvidencePopup item={item} />}
+              {isActive && item.evidence?.receipt && <ItemEvidencePopup item={item} />}
               {isActive && (
                 <span className="absolute h-10 w-10 animate-ping rounded-full bg-primary/30" />
               )}

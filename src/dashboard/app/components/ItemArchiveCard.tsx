@@ -103,6 +103,32 @@ export function ItemArchiveCard({ item, isHighlighted, onHighlight }: ItemArchiv
             </div>
           </div>
 
+          {/* Before / after condition photos */}
+          {item.evidence && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className={cn("overflow-hidden rounded-xl", a ? "bg-[#CC6E39]/40" : "bg-[#363C43]")}>
+                <ImageWithFallback
+                  src={item.evidence.before}
+                  alt={`${item.name} before`}
+                  className="aspect-[4/3] w-full object-cover"
+                />
+                <p className={cn("px-2 py-1 text-[10px] font-medium", a ? "text-[#331C0E]" : "text-[#9CA8B7]")}>
+                  Before
+                </p>
+              </div>
+              <div className={cn("overflow-hidden rounded-xl", a ? "bg-[#CC6E39]/40" : "bg-[#363C43]")}>
+                <ImageWithFallback
+                  src={item.evidence.after}
+                  alt={`${item.name} after`}
+                  className="aspect-[4/3] w-full object-cover"
+                />
+                <p className={cn("px-2 py-1 text-[10px] font-medium", a ? "text-[#331C0E]" : "text-[#9CA8B7]")}>
+                  After
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Divider */}
           <div className={cn("h-px", a ? "bg-[#CC6E39]" : "bg-[#2A2F35]")} />
 
@@ -153,32 +179,21 @@ export function ItemArchiveCard({ item, isHighlighted, onHighlight }: ItemArchiv
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FileText className="size-4 text-primary" /> {item.name} — Evidence
+              <FileText className="size-4 text-primary" /> {item.name} — Receipt
             </DialogTitle>
             <DialogDescription>
-              {item.hasEvidence
-                ? "Supporting documents on file for this item."
-                : "No evidence on file yet. Add a receipt or photo to strengthen your coverage."}
+              {item.evidence?.receipt || item.hasEvidence
+                ? "Purchase receipt on file for this item."
+                : "No receipt on file yet. Add one to strengthen your coverage."}
             </DialogDescription>
           </DialogHeader>
-          {item.evidence ? (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="overflow-hidden rounded-xl border border-border">
-                <ImageWithFallback
-                  src={item.evidence.before}
-                  alt={`${item.name} before`}
-                  className="h-32 w-full object-cover"
-                />
-                <p className="px-2 py-1.5 text-xs text-muted-foreground">Before</p>
-              </div>
-              <div className="overflow-hidden rounded-xl border border-border">
-                <ImageWithFallback
-                  src={item.evidence.after}
-                  alt={`${item.name} after`}
-                  className="h-32 w-full object-cover"
-                />
-                <p className="px-2 py-1.5 text-xs text-muted-foreground">After</p>
-              </div>
+          {item.evidence?.receipt ? (
+            <div className="overflow-hidden rounded-xl border border-border">
+              <ImageWithFallback
+                src={item.evidence.receipt}
+                alt={`${item.name} receipt`}
+                className="max-h-80 w-full object-contain bg-muted/30"
+              />
             </div>
           ) : item.hasEvidence ? (
             <div className="grid grid-cols-2 gap-3">

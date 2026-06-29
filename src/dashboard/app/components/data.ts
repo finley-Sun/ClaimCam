@@ -22,7 +22,7 @@ export type InsuredItem = {
   // Floor-plan placement within splat bounds: x = left→right, y = back→forward, h = height.
   marker: { x: number; y: number; h?: number };
   position?: [number, number, number];
-  evidence?: { before: string; after: string };
+  evidence?: { before: string; after: string; receipt?: string };
 };
 
 export type Room = {
@@ -138,6 +138,7 @@ export const ROOMS: Room[] = [
         evidence: {
           before: "/evidence/OLED_TV/before.jpg.webp",
           after: "/evidence/OLED_TV/after.png",
+          receipt: "/evidence/OLED_TV/receipt.jpg",
         },
       },
       {
@@ -155,6 +156,25 @@ export const ROOMS: Room[] = [
         evidence: {
           before: "/evidence/Dell_monitor/before.jpg",
           after: "/evidence/Dell_monitor/after.png",
+          receipt: "/evidence/Dell_monitor/receipt_dell.jpg",
+        },
+      },
+      {
+        id: "speaker",
+        name: "Smart Speaker",
+        model: "Sonos Five · S/N F5C9A41",
+        marketValue: 390,
+        replacementValue: 549,
+        coverage: 400,
+        category: "Electronics",
+        hasEvidence: true,
+        purchaseDate: "Nov 30, 2023",
+        aiAutofilled: true,
+        marker: { x: 0.74, y: 0.8, h: 0.3 },
+        evidence: {
+          before: "/evidence/smart_speaker/before.jpg",
+          after: "/evidence/smart_speaker/after.png",
+          receipt: "/evidence/smart_speaker/receipt_speaker.jpg",
         },
       },
       {
@@ -172,6 +192,7 @@ export const ROOMS: Room[] = [
         evidence: {
           before: "/evidence/sectional_sofa/before.jpg",
           after: "/evidence/sectional_sofa/after.png",
+          receipt: "/evidence/sectional_sofa/receipt_sofa.jpg",
         },
       },
       {
@@ -189,6 +210,7 @@ export const ROOMS: Room[] = [
         evidence: {
           before: "/evidence/upright_piano/before.jpg",
           after: "/evidence/upright_piano/after.png",
+          receipt: "/evidence/upright_piano/receipt_piano.jpg",
         },
       },
     ],
