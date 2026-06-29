@@ -134,7 +134,7 @@ export const ROOMS: Room[] = [
         hasEvidence: true,
         purchaseDate: "May 23, 2025",
         aiAutofilled: true,
-        marker: { x: 0.55, y: 0.84, h: 0.52 },
+        marker: { x: 0.23, y: 0.79, h: 0.52 },
         evidence: {
           before: "/evidence/OLED_TV/before.jpg.webp",
           after: "/evidence/OLED_TV/after.png",
@@ -152,7 +152,7 @@ export const ROOMS: Room[] = [
         hasEvidence: true,
         purchaseDate: "Jan 18, 2024",
         aiAutofilled: true,
-        marker: { x: 0.38, y: 0.78, h: 0.45 },
+        marker: { x: 0.79, y: 0.13, h: 0.24 },
         evidence: {
           before: "/evidence/Dell_monitor/before.jpg",
           after: "/evidence/Dell_monitor/after.png",
@@ -170,7 +170,7 @@ export const ROOMS: Room[] = [
         hasEvidence: true,
         purchaseDate: "Nov 30, 2023",
         aiAutofilled: true,
-        marker: { x: 0.74, y: 0.8, h: 0.3 },
+        marker: { x: 0.12, y: 0.65, h: 0.3 },
         evidence: {
           before: "/evidence/smart_speaker/before.jpg",
           after: "/evidence/smart_speaker/after.png",
@@ -188,7 +188,7 @@ export const ROOMS: Room[] = [
         hasEvidence: true,
         purchaseDate: "May 23, 2025",
         aiAutofilled: true,
-        marker: { x: 0.64, y: 0.34, h: 0.24 },
+        marker: { x: 0.42, y: 0.22, h: 0.24 },
         evidence: {
           before: "/evidence/sectional_sofa/before.jpg",
           after: "/evidence/sectional_sofa/after.png",
@@ -206,7 +206,7 @@ export const ROOMS: Room[] = [
         hasEvidence: true,
         purchaseDate: "Aug 12, 2019",
         aiAutofilled: false,
-        marker: { x: 0.18, y: 0.55, h: 0.38 },
+        marker: { x: 0.75, y: 0.61, h: 0.38 },
         evidence: {
           before: "/evidence/upright_piano/before.jpg",
           after: "/evidence/upright_piano/after.png",

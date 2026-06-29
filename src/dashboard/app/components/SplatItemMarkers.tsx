@@ -74,7 +74,6 @@ export function SplatItemMarkers({
     };
   }, [viewer, items, enabled]);
 
-  // Update marker screen positions via DOM — avoid setState every frame.
   useEffect(() => {
     if (!enabled) return;
 
