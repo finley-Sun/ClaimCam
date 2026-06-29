@@ -5,6 +5,7 @@ import {
   projectWorldToScreen,
 } from "../../../SplatManagement/splatMarkers.js";
 import type { InsuredItem } from "./data";
+import { ItemEvidencePopup } from "./ItemEvidencePopup";
 import { cn } from "./ui/utils";
 
 type SplatItemMarkersProps = {
@@ -139,6 +140,7 @@ export function SplatItemMarkers({
               className="relative flex flex-col items-center justify-center"
               style={{ width: HOVER_RADIUS_PX * 2, height: HOVER_RADIUS_PX * 2 }}
             >
+              {isActive && item.evidence && <ItemEvidencePopup item={item} />}
               {isActive && (
                 <span className="absolute h-10 w-10 animate-ping rounded-full bg-primary/30" />
               )}

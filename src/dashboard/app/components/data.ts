@@ -22,6 +22,7 @@ export type InsuredItem = {
   // Floor-plan placement within splat bounds: x = left→right, y = back→forward, h = height.
   marker: { x: number; y: number; h?: number };
   position?: [number, number, number];
+  evidence?: { before: string; after: string };
 };
 
 export type Room = {
@@ -134,6 +135,10 @@ export const ROOMS: Room[] = [
         purchaseDate: "May 23, 2025",
         aiAutofilled: true,
         marker: { x: 0.55, y: 0.84, h: 0.52 },
+        evidence: {
+          before: "/evidence/OLED_TV/before.jpg.webp",
+          after: "/evidence/OLED_TV/after.png",
+        },
       },
       {
         id: "monitor",
@@ -147,32 +152,10 @@ export const ROOMS: Room[] = [
         purchaseDate: "Jan 18, 2024",
         aiAutofilled: true,
         marker: { x: 0.38, y: 0.78, h: 0.45 },
-      },
-      {
-        id: "speaker",
-        name: "Smart Speaker",
-        model: "Sonos Five · S/N F5C9A41",
-        marketValue: 390,
-        replacementValue: 549,
-        coverage: 400,
-        category: "Electronics",
-        hasEvidence: true,
-        purchaseDate: "Nov 30, 2023",
-        aiAutofilled: true,
-        marker: { x: 0.74, y: 0.8, h: 0.3 },
-      },
-      {
-        id: "console",
-        name: "Game Console",
-        model: "Sony PlayStation 5 · S/N CFI1215A07X",
-        marketValue: 400,
-        replacementValue: 499,
-        coverage: 450,
-        category: "Electronics",
-        hasEvidence: true,
-        purchaseDate: "Dec 2, 2024",
-        aiAutofilled: true,
-        marker: { x: 0.42, y: 0.78, h: 0.2 },
+        evidence: {
+          before: "/evidence/Dell_monitor/before.jpg",
+          after: "/evidence/Dell_monitor/after.png",
+        },
       },
       {
         id: "sofa",
@@ -182,10 +165,14 @@ export const ROOMS: Room[] = [
         replacementValue: 2400,
         coverage: 2000,
         category: "Furniture",
-        hasEvidence: false,
+        hasEvidence: true,
         purchaseDate: "May 23, 2025",
         aiAutofilled: true,
         marker: { x: 0.64, y: 0.34, h: 0.24 },
+        evidence: {
+          before: "/evidence/sectional_sofa/before.jpg",
+          after: "/evidence/sectional_sofa/after.png",
+        },
       },
       {
         id: "piano",
@@ -195,10 +182,14 @@ export const ROOMS: Room[] = [
         replacementValue: 9200,
         coverage: 8000,
         category: "Instrument",
-        hasEvidence: false,
+        hasEvidence: true,
         purchaseDate: "Aug 12, 2019",
         aiAutofilled: false,
         marker: { x: 0.18, y: 0.55, h: 0.38 },
+        evidence: {
+          before: "/evidence/upright_piano/before.jpg",
+          after: "/evidence/upright_piano/after.png",
+        },
       },
     ],
     structure: [

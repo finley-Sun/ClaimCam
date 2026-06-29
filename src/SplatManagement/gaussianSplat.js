@@ -23,6 +23,7 @@ export class GaussianSplatViewer {
     this._xrActive = false;
     this._activeRoot = null;
     this._loadedUrl = null;
+    this._exitOverlayEl = null;
 
     this._resizeObserver = new ResizeObserver(() => this._onResize());
     this._resizeObserver.observe(this.container);
@@ -202,6 +203,8 @@ export class GaussianSplatViewer {
   dispose() {
     this._killViewer();
     this._resizeObserver.disconnect();
+    this._exitOverlayEl?.remove();
+    this._exitOverlayEl = null;
   }
 
   _onResize() {
@@ -236,6 +239,61 @@ export class GaussianSplatViewer {
     this._readyCallback = callback;
   }
 
+  _ensureExitOverlay() {
+    if (this._exitOverlayEl) return this._exitOverlayEl;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'claimcam-vr-exit-overlay';
+    overlay.setAttribute('data-testid', 'vr-exit-overlay');
+    overlay.style.cssText = [
+      'position:fixed',
+      'inset:0',
+      'z-index:2147483647',
+      'display:none',
+      'pointer-events:none',
+    ].join(';');
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = 'Exit VR';
+    btn.setAttribute('aria-label', 'Exit VR');
+    btn.style.cssText = [
+      'position:absolute',
+      'left:50%',
+      'bottom:24px',
+      'transform:translateX(-50%)',
+      'pointer-events:auto',
+      'padding:12px 20px',
+      'border:none',
+      'border-radius:9999px',
+      'background:#FF8A47',
+      'color:#fff',
+      'font:500 14px/1 system-ui,-apple-system,sans-serif',
+      'cursor:pointer',
+      'box-shadow:0 12px 36px -10px rgba(255,138,71,0.55)',
+    ].join(';');
+    btn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.exitImmersiveVR();
+    });
+
+    overlay.appendChild(btn);
+    document.body.appendChild(overlay);
+    this._exitOverlayEl = overlay;
+    return overlay;
+  }
+
+  _showExitOverlay() {
+    const overlay = this._ensureExitOverlay();
+    overlay.style.display = 'block';
+  }
+
+  _hideExitOverlay() {
+    if (this._exitOverlayEl) {
+      this._exitOverlayEl.style.display = 'none';
+    }
+  }
+
   _ensureXR() {
     const viewer = this.viewer;
     const renderer = viewer?.renderer;
@@ -248,6 +306,7 @@ export class GaussianSplatViewer {
         if (!viewer) return;
         viewer.webXRActive = true;
         this._xrActive = true;
+        this._showExitOverlay();
         // mkkellogg uses rAF when webXRMode is None — switch to XR loop for headset.
         try { viewer.stop(); } catch (e) { /* ignore */ }
         viewer.renderer.setAnimationLoop(viewer.selfDrivenUpdateFunc);
@@ -257,6 +316,7 @@ export class GaussianSplatViewer {
         if (!viewer) return;
         viewer.webXRActive = false;
         this._xrActive = false;
+        this._hideExitOverlay();
         viewer.renderer.setAnimationLoop(null);
         if (viewer.selfDrivenMode) {
           try { viewer.start(); } catch (e) { /* ignore */ }
@@ -285,11 +345,23 @@ export class GaussianSplatViewer {
       throw new Error('WebXR is not available in this browser');
     }
 
-    // Minimal session options — extra features slow Quest negotiation.
-    navigator.xr.requestSession('immersive-vr', {
+    const overlay = this._ensureExitOverlay();
+    const sessionOptionsWithOverlay = {
+      optionalFeatures: ['local-floor', 'dom-overlay'],
+      domOverlay: { root: overlay },
+    };
+    const sessionOptionsBasic = {
       optionalFeatures: ['local-floor'],
-    })
+    };
+
+    // dom-overlay keeps the Exit VR control visible inside the headset.
+    navigator.xr.requestSession('immersive-vr', sessionOptionsWithOverlay)
+      .catch((overlayErr) => {
+        console.warn('[GaussianSplat] dom-overlay unavailable, retrying without overlay:', overlayErr);
+        return navigator.xr.requestSession('immersive-vr', sessionOptionsBasic);
+      })
       .then(async (session) => {
+        if (!session) return;
         this.viewer.webXRActive = true;
         this._xrActive = true;
         await renderer.xr.setSession(session);
@@ -297,6 +369,7 @@ export class GaussianSplatViewer {
       .catch((err) => {
         this.viewer.webXRActive = false;
         this._xrActive = false;
+        this._hideExitOverlay();
         console.error('[GaussianSplat] VR session failed:', err);
         this._onXRSessionEnd?.();
       });

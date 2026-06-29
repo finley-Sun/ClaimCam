@@ -161,7 +161,26 @@ export function ItemArchiveCard({ item, isHighlighted, onHighlight }: ItemArchiv
                 : "No evidence on file yet. Add a receipt or photo to strengthen your coverage."}
             </DialogDescription>
           </DialogHeader>
-          {item.hasEvidence ? (
+          {item.evidence ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="overflow-hidden rounded-xl border border-border">
+                <ImageWithFallback
+                  src={item.evidence.before}
+                  alt={`${item.name} before`}
+                  className="h-32 w-full object-cover"
+                />
+                <p className="px-2 py-1.5 text-xs text-muted-foreground">Before</p>
+              </div>
+              <div className="overflow-hidden rounded-xl border border-border">
+                <ImageWithFallback
+                  src={item.evidence.after}
+                  alt={`${item.name} after`}
+                  className="h-32 w-full object-cover"
+                />
+                <p className="px-2 py-1.5 text-xs text-muted-foreground">After</p>
+              </div>
+            </div>
+          ) : item.hasEvidence ? (
             <div className="grid grid-cols-2 gap-3">
               <div className="overflow-hidden rounded-xl border border-border">
                 <ImageWithFallback
