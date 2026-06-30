@@ -5,7 +5,6 @@ import { RoomSwitcher } from "./RoomSwitcher";
 import { TimeframeSelector } from "./TimeframeSelector";
 import { ArchivePanel } from "./ArchivePanel";
 import { EnterXRButton } from "./EnterXRButton";
-import { XROverlay } from "./XROverlay";
 import { cn } from "./ui/utils";
 import { getRoomsByUser, LOGS_BY_USER, type Room, type TimeframeLog, type UserType } from "./data";
 import { resolveSplatUrl } from "../../lib/splatUrls";
@@ -124,9 +123,6 @@ export function PropertyView({
             onClose={onToggleArchive}
             onFlowOpenChange={setArchiveFlowOpen}
         />
-
-        {/* XR exit overlay - visible only during immersive session */}
-        <XROverlay />
         </div>
     );
 }
