@@ -42,10 +42,11 @@ export function PropertyView({
     const splatUrl = resolveSplatUrl(room.id, log.type);
     const [splatReady, setSplatReady] = useState(false);
 
-    /* Track whether any creation modal is open to disable renderer controls */
+    /* Track whether any modal is open to disable renderer controls */
     const [roomFlowOpen, setRoomFlowOpen] = useState(false);
     const [archiveFlowOpen, setArchiveFlowOpen] = useState(false);
-    const controlsDisabled = roomFlowOpen || archiveFlowOpen;
+    const [claimFlowOpen, setClaimFlowOpen] = useState(false);
+    const controlsDisabled = roomFlowOpen || archiveFlowOpen || claimFlowOpen;
 
     function handleAddRoom(newRoom: Room) {
         setRooms((prev) => [...prev, newRoom]);
@@ -81,6 +82,7 @@ export function PropertyView({
                         logs={logs}
                         activeLogId={activeLogId}
                         onSelect={onLogChange}
+                        onFlowOpenChange={setClaimFlowOpen}
                     />
                 </div>
 

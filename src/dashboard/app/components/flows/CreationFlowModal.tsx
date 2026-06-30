@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { X, Upload, FileText, Video, Check } from "lucide-react";
-import type { Room, InsuredItem } from "./data";
+import type { Room, InsuredItem } from "../data";
 
 // ─── Flow mode ──────────────────────────────────────────────────────────────
 
