@@ -60,8 +60,11 @@ export function pickWorldFromMarker(mkViewer, marker, width, height) {
 
 /**
  * Resolve each item to a world-space anchor (explicit position or floor-plan marker).
+ * @param {object} [options]
+ * @param {boolean} [options.isDamage] use item.damageMarker when present
  */
-export function resolveItemWorldPositions(mkViewer, items, width, height) {
+export function resolveItemWorldPositions(mkViewer, items, width, height, options = {}) {
+    const { isDamage = false } = options;
     const resolved = new Map();
     const bounds = computeSplatBounds(mkViewer);
 
@@ -71,12 +74,15 @@ export function resolveItemWorldPositions(mkViewer, items, width, height) {
             continue;
         }
 
-        if (bounds && item.marker) {
-            resolved.set(item.id, worldFromFloorMarker(bounds, item.marker));
+        const marker =
+            isDamage && item.damageMarker ? item.damageMarker : item.marker;
+
+        if (bounds && marker) {
+            resolved.set(item.id, worldFromFloorMarker(bounds, marker));
             continue;
         }
 
-        const hit = pickWorldFromMarker(mkViewer, item.marker, width, height);
+        const hit = pickWorldFromMarker(mkViewer, marker, width, height);
         if (hit) {
             resolved.set(item.id, hit);
         }

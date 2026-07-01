@@ -141,6 +141,7 @@ export function SplatRenderer({
                 <SplatItemMarkers
                     viewer={viewerRef.current}
                     items={items}
+                    isDamage={isDamage}
                     highlightedItemId={highlightedItemId}
                     onHighlight={onHighlight}
                     enabled={!loading}

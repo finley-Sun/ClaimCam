@@ -1,5 +1,6 @@
 import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 import { computeSplatBounds } from './splatPlacement.js';
+import { isHeadsetBrowser } from './xrDevice.js';
 
 // mkkellogg uses quaternion [x, y, z, w]. [1,0,0,0] is 180° around X (upside down).
 const SPLAT_IDENTITY_ROTATION = [0, 0, 0, 1];
@@ -235,6 +236,10 @@ export class GaussianSplatViewer {
     this._onXRSessionEnd = callback;
   }
 
+  setOnXRSessionStart(callback) {
+    this._onXRSessionStart = callback;
+  }
+
   setReadyCallback(callback) {
     this._readyCallback = callback;
   }
@@ -245,12 +250,20 @@ export class GaussianSplatViewer {
     const overlay = document.createElement('div');
     overlay.id = 'claimcam-vr-exit-overlay';
     overlay.setAttribute('data-testid', 'vr-exit-overlay');
+    // WebXR dom-overlay root must stay in the DOM and not use display:none at session start.
     overlay.style.cssText = [
       'position:fixed',
-      'inset:0',
+      'left:0',
+      'right:0',
+      'bottom:0',
+      'height:96px',
       'z-index:2147483647',
-      'display:none',
+      'display:flex',
+      'justify-content:center',
+      'align-items:flex-end',
+      'padding-bottom:max(24px, env(safe-area-inset-bottom))',
       'pointer-events:none',
+      'visibility:hidden',
     ].join(';');
 
     const btn = document.createElement('button');
@@ -258,19 +271,16 @@ export class GaussianSplatViewer {
     btn.textContent = 'Exit VR';
     btn.setAttribute('aria-label', 'Exit VR');
     btn.style.cssText = [
-      'position:absolute',
-      'left:50%',
-      'bottom:24px',
-      'transform:translateX(-50%)',
+      'position:relative',
       'pointer-events:auto',
-      'padding:12px 20px',
+      'padding:14px 24px',
       'border:none',
       'border-radius:9999px',
-      'background:#FF8A47',
+      'background:#ef4444',
       'color:#fff',
-      'font:500 14px/1 system-ui,-apple-system,sans-serif',
+      'font:600 16px/1 system-ui,-apple-system,sans-serif',
       'cursor:pointer',
-      'box-shadow:0 12px 36px -10px rgba(255,138,71,0.55)',
+      'box-shadow:0 12px 36px rgba(0,0,0,0.45)',
     ].join(';');
     btn.addEventListener('click', (event) => {
       event.stopPropagation();
@@ -285,12 +295,12 @@ export class GaussianSplatViewer {
 
   _showExitOverlay() {
     const overlay = this._ensureExitOverlay();
-    overlay.style.display = 'block';
+    overlay.style.visibility = 'visible';
   }
 
   _hideExitOverlay() {
     if (this._exitOverlayEl) {
-      this._exitOverlayEl.style.display = 'none';
+      this._exitOverlayEl.style.visibility = 'hidden';
     }
   }
 
@@ -307,6 +317,7 @@ export class GaussianSplatViewer {
         viewer.webXRActive = true;
         this._xrActive = true;
         this._showExitOverlay();
+        this._onXRSessionStart?.();
         // mkkellogg uses rAF when webXRMode is None — switch to XR loop for headset.
         try { viewer.stop(); } catch (e) { /* ignore */ }
         viewer.renderer.setAnimationLoop(viewer.selfDrivenUpdateFunc);
@@ -334,6 +345,10 @@ export class GaussianSplatViewer {
    * the user's click/tap — do not await other work before this runs.
    */
   enterImmersiveVR() {
+    if (!isHeadsetBrowser()) {
+      throw new Error('VR requires a headset browser');
+    }
+
     if (!this._ensureXR()) {
       throw new Error('Splat viewer is not ready for VR');
     }
@@ -346,6 +361,8 @@ export class GaussianSplatViewer {
     }
 
     const overlay = this._ensureExitOverlay();
+    this._showExitOverlay();
+
     const sessionOptionsWithOverlay = {
       optionalFeatures: ['local-floor', 'dom-overlay'],
       domOverlay: { root: overlay },

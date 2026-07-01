@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { Glasses, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
+  checkHeadsetVRAvailable,
   enterSplatXR,
   exitSplatXR,
   isSplatXRActive,
-  isWebXRSupported,
   onSplatXREnd,
 } from "../../../SplatManagement/splatBridge.js";
+import { isHeadsetBrowser } from "../../../SplatManagement/xrDevice.js";
 
 type EnterXRButtonProps = {
   splatUrl: string;
@@ -17,12 +18,17 @@ type EnterXRButtonProps = {
 export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
   const [inXR, setInXR] = useState(isSplatXRActive());
   const [entering, setEntering] = useState(false);
+  const [xrSupported, setXrSupported] = useState<boolean | null>(null);
 
   useEffect(() => {
     onSplatXREnd(() => {
       setInXR(false);
       setEntering(false);
     });
+  }, []);
+
+  useEffect(() => {
+    checkHeadsetVRAvailable().then(setXrSupported);
   }, []);
 
   useEffect(() => {
@@ -46,9 +52,11 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
       return;
     }
 
-    if (!isWebXRSupported()) {
+    if (xrSupported === false) {
       toast.error("VR unavailable", {
-        description: "Use Quest Browser over HTTPS.",
+        description: isHeadsetBrowser()
+          ? "This browser does not support WebXR. Open the site over HTTPS."
+          : "Open this page in your headset browser to enter VR.",
       });
       return;
     }
@@ -61,7 +69,7 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
       console.error("[EnterXR] failed:", err);
       setEntering(false);
       toast.error("Could not enter VR", {
-        description: "Try again from Quest Browser over HTTPS.",
+        description: "Try again from a WebXR-capable browser over HTTPS.",
       });
     }
   };

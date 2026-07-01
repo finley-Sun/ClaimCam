@@ -11,6 +11,7 @@ import { cn } from "./ui/utils";
 type SplatItemMarkersProps = {
   viewer: GaussianSplatViewer;
   items: InsuredItem[];
+  isDamage?: boolean;
   highlightedItemId: string | null;
   onHighlight: (id: string) => void;
   enabled: boolean;
@@ -21,15 +22,13 @@ const HOVER_RADIUS_PX = 36;
 export function SplatItemMarkers({
   viewer,
   items,
+  isDamage = false,
   highlightedItemId,
   onHighlight,
   enabled,
 }: SplatItemMarkersProps) {
   const worldPositionsRef = useRef<Map<string, import("three").Vector3>>(new Map());
   const markerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const screenPositionsRef = useRef<Map<string, { x: number; y: number; visible: boolean }>>(
-    new Map(),
-  );
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -52,7 +51,9 @@ export function SplatItemMarkers({
 
       const pending = items.filter((item) => !worldPositionsRef.current.has(item.id));
       if (pending.length > 0) {
-        const batch = resolveItemWorldPositions(mkViewer, pending, width, height);
+        const batch = resolveItemWorldPositions(mkViewer, pending, width, height, {
+          isDamage,
+        });
         for (const [id, pos] of batch) {
           worldPositionsRef.current.set(id, pos);
         }
@@ -72,7 +73,7 @@ export function SplatItemMarkers({
     return () => {
       cancelled = true;
     };
-  }, [viewer, items, enabled]);
+  }, [viewer, items, enabled, isDamage]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -91,7 +92,6 @@ export function SplatItemMarkers({
           if (!world || !el) continue;
 
           const projected = projectWorldToScreen(world, camera, width, height);
-          screenPositionsRef.current.set(item.id, projected);
 
           if (projected.visible) {
             el.style.display = "block";
@@ -108,7 +108,7 @@ export function SplatItemMarkers({
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [viewer, items, enabled]);
+  }, [viewer, items, enabled, isDamage]);
 
   const activeId = hoveredId ?? highlightedItemId;
 

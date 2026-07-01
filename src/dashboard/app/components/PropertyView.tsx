@@ -70,27 +70,28 @@ export function PropertyView({
             />
 
             {/* Top-left floating controls */}
-            <div className="absolute left-5 top-5 z-10 flex flex-wrap items-center gap-2.5">
-                <RoomSwitcher
-                    rooms={rooms}
-                    activeRoomId={activeRoomId}
-                    onSelect={onRoomChange}
-                    onAddRoom={handleAddRoom}
-                    onFlowOpenChange={setRoomFlowOpen}
-                />
-                <TimeframeSelector
-                    logs={logs}
-                    activeLogId={activeLogId}
-                    onSelect={onLogChange}
-                    onFlowOpenChange={setClaimFlowOpen}
-                />
+            <div className="absolute left-5 top-5 z-10 flex flex-col items-start gap-2">
+                <div className="flex flex-wrap items-center gap-2.5">
+                    <RoomSwitcher
+                        rooms={rooms}
+                        activeRoomId={activeRoomId}
+                        onSelect={onRoomChange}
+                        onAddRoom={handleAddRoom}
+                        onFlowOpenChange={setRoomFlowOpen}
+                    />
+                    <TimeframeSelector
+                        logs={logs}
+                        activeLogId={activeLogId}
+                        onSelect={onLogChange}
+                        onFlowOpenChange={setClaimFlowOpen}
+                    />
+                </div>
+                {isDamage && (
+                    <div className="rounded-full border border-destructive/40 bg-destructive/15 px-3 py-1 text-xs text-destructive backdrop-blur-md">
+                        Viewing incident capture · {log.label}
+                    </div>
+                )}
             </div>
-
-            {isDamage && (
-            <div className="absolute left-1/2 top-5 z-10 -translate-x-1/2 rounded-full border border-destructive/40 bg-destructive/15 px-3 py-1 text-xs text-destructive backdrop-blur-md">
-                Viewing incident capture · {log.label}
-            </div>
-        )}
 
             {/* Archive toggle (top-right) */}
             <button

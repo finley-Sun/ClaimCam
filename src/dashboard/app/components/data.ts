@@ -21,6 +21,8 @@ export type InsuredItem = {
   aiAutofilled?: boolean;
   // Floor-plan placement within splat bounds: x = left→right, y = back→forward, h = height.
   marker: { x: number; y: number; h?: number };
+  /** Override marker when viewing a damage/incident splat (different scan bounds). */
+  damageMarker?: { x: number; y: number; h?: number };
   position?: [number, number, number];
   evidence?: { before: string; after: string; receipt?: string };
 };
@@ -135,6 +137,7 @@ export const ROOMS: Room[] = [
         purchaseDate: "May 23, 2025",
         aiAutofilled: true,
         marker: { x: 0.23, y: 0.79, h: 0.52 },
+        damageMarker: { x: 0.249, y: 0.818, h: 0.397 },
         evidence: {
           before: "/evidence/OLED_TV/before.jpg.webp",
           after: "/evidence/OLED_TV/after.png",
@@ -153,6 +156,7 @@ export const ROOMS: Room[] = [
         purchaseDate: "Jan 18, 2024",
         aiAutofilled: true,
         marker: { x: 0.79, y: 0.13, h: 0.24 },
+        damageMarker: { x: 0.72, y: 0.047, h: 0.361 },
         evidence: {
           before: "/evidence/Dell_monitor/before.jpg",
           after: "/evidence/Dell_monitor/after.png",
@@ -171,6 +175,7 @@ export const ROOMS: Room[] = [
         purchaseDate: "Nov 30, 2023",
         aiAutofilled: true,
         marker: { x: 0.12, y: 0.65, h: 0.3 },
+        damageMarker: { x: 0.098, y: 0.645, h: 0.277 },
         evidence: {
           before: "/evidence/smart_speaker/before.jpg",
           after: "/evidence/smart_speaker/after.png",
@@ -189,6 +194,7 @@ export const ROOMS: Room[] = [
         purchaseDate: "May 23, 2025",
         aiAutofilled: true,
         marker: { x: 0.42, y: 0.22, h: 0.24 },
+        damageMarker: { x: 0.373, y: 0.162, h: 0.366 },
         evidence: {
           before: "/evidence/sectional_sofa/before.jpg",
           after: "/evidence/sectional_sofa/after.png",
@@ -207,6 +213,7 @@ export const ROOMS: Room[] = [
         purchaseDate: "Aug 12, 2019",
         aiAutofilled: false,
         marker: { x: 0.75, y: 0.61, h: 0.38 },
+        damageMarker: { x: 0.793, y: 0.53, h: 0.365 },
         evidence: {
           before: "/evidence/upright_piano/before.jpg",
           after: "/evidence/upright_piano/after.png",
