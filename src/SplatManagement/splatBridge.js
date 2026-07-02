@@ -4,20 +4,14 @@ let activeViewer = null;
 let activeUrl = null;
 let onXREndCallback = null;
 let xrStateListeners = [];
-let fullscreenListenersBound = false;
 
 function wireViewerXR(viewer) {
-    if (!viewer || fullscreenListenersBound) return;
-
-    const onFullscreenChange = () => {
-        const active = isSplatXRActive();
-        notifyXRStateChange(active);
-        if (!active) onXREndCallback?.();
-    };
-
-    document.addEventListener('fullscreenchange', onFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', onFullscreenChange);
-    fullscreenListenersBound = true;
+    if (!viewer) return;
+    viewer.setOnXRSessionStart(() => notifyXRStateChange(true));
+    viewer.setOnXRSessionEnd(() => {
+        onXREndCallback?.();
+        notifyXRStateChange(false);
+    });
 }
 
 export function setActiveSplatViewer(viewer, url) {
@@ -37,7 +31,6 @@ export function onSplatXREnd(callback) {
     onXREndCallback = callback;
 }
 
-/** Register a listener that fires whenever XR state changes. */
 export function onXRStateChange(callback) {
     xrStateListeners.push(callback);
     return () => {
@@ -51,66 +44,42 @@ function notifyXRStateChange(active) {
     }
 }
 
-/** Enter immersive VR on the already-loaded splat (must run from a user click). */
+/** Enter immersive 360 on the already-loaded splat (must run from a user click). */
 export function enterSplatXR() {
     if (!activeViewer) {
         throw new Error('Splat viewer is not ready');
     }
     if (!isHeadsetBrowser()) {
-        throw new Error('VR requires a headset browser');
+        throw new Error('360 view requires a headset browser');
     }
-
-    const container = activeViewer.container;
-    if (!container) {
-        throw new Error('Fullscreen target is unavailable');
-    }
-
-    if (container.requestFullscreen) {
-        container.requestFullscreen();
-        return;
-    }
-
-    if (container.webkitRequestFullscreen) {
-        container.webkitRequestFullscreen();
-        return;
-    }
-
-    throw new Error('Fullscreen is not supported in this browser');
+    activeViewer.enterImmersiveVR();
 }
 
 export function exitSplatXR() {
-    if (document.exitFullscreen) {
-        document.exitFullscreen();
-        return;
-    }
-    if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-    }
+    activeViewer?.exitImmersiveVR();
 }
 
 export function isSplatXRActive() {
-    const container = activeViewer?.container;
-    if (!container) return false;
-    return document.fullscreenElement === container || document.webkitFullscreenElement === container;
+    return activeViewer?.isInImmersiveVR() ?? false;
 }
 
 export function isWebXRSupported() {
     return typeof navigator !== 'undefined' && !!navigator.xr?.requestSession;
 }
 
-/** True when this browser can start immersive-vr (any WebXR-capable headset browser). */
 export async function checkImmersiveVRSupported() {
-    return !!document.fullscreenEnabled || !!document.webkitFullscreenEnabled;
+    if (!navigator.xr?.isSessionSupported) return false;
+    try {
+        return await navigator.xr.isSessionSupported('immersive-vr');
+    } catch {
+        return false;
+    }
 }
 
-/** VR entry is limited to real headset browsers — desktop/emulator sessions are blocked. */
 export async function checkHeadsetVRAvailable() {
     if (!isHeadsetBrowser()) return false;
     return checkImmersiveVRSupported();
 }
 
-/** @deprecated Native WebXR keeps the same viewer — no teardown needed. */
 export function destroySplatForXR() {}
-
-/** @deprecated Native WebXR keeps the same viewer — no reload needed. */
 export async function restoreSplatAfterXR() {}

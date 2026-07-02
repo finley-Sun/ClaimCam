@@ -7,6 +7,7 @@ import {
   exitSplatXR,
   isSplatXRActive,
   onSplatXREnd,
+  onXRStateChange,
 } from "../../../SplatManagement/splatBridge.js";
 import { isHeadsetBrowser } from "../../../SplatManagement/xrDevice.js";
 
@@ -25,17 +26,15 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
       setInXR(false);
       setEntering(false);
     });
+    return onXRStateChange((active) => {
+      setInXR(active);
+      if (active) setEntering(false);
+    });
   }, []);
 
   useEffect(() => {
     checkHeadsetVRAvailable().then(setXrSupported);
   }, []);
-
-  useEffect(() => {
-    if (inXR && isSplatXRActive()) {
-      setEntering(false);
-    }
-  }, [inXR]);
 
   const handleClick = () => {
     if (inXR || isSplatXRActive()) {
@@ -47,16 +46,16 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
 
     if (!vrReady) {
       toast.error("Scene not ready", {
-        description: "Wait until the reconstruction appears, then tap Fullscreen.",
+        description: "Wait until the reconstruction appears, then tap Enter 360.",
       });
       return;
     }
 
     if (xrSupported === false) {
-      toast.error("Fullscreen unavailable", {
+      toast.error("360 view unavailable", {
         description: isHeadsetBrowser()
-          ? "This browser does not support fullscreen mode."
-          : "Open this page in your headset browser for fullscreen mode.",
+          ? "This browser does not support WebXR. Open the site over HTTPS."
+          : "Open this page in your headset browser for 360 view.",
       });
       return;
     }
@@ -64,22 +63,24 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
     setEntering(true);
     try {
       enterSplatXR();
-      setInXR(true);
+      toast.message("Inside the room", {
+        description: "Look around with your head. Press right B to exit.",
+      });
     } catch (err) {
       console.error("[EnterXR] failed:", err);
       setEntering(false);
-      toast.error("Could not enter fullscreen", {
-        description: err instanceof Error ? err.message : "Try again.",
+      toast.error("Could not enter 360 view", {
+        description: err instanceof Error ? err.message : "Try again over HTTPS.",
       });
     }
   };
 
   const label =
     inXR || isSplatXRActive()
-      ? "Exit Fullscreen"
+      ? "Exit 360"
       : entering
         ? "Entering…"
-        : "Enter Fullscreen";
+        : "Enter 360";
 
   return (
     <button
