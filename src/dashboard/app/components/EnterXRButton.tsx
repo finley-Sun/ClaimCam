@@ -46,16 +46,16 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
 
     if (!vrReady) {
       toast.error("Scene not ready", {
-        description: "Wait until the reconstruction appears, then tap Enter 360.",
+        description: "Wait until the reconstruction appears, then tap Enter VR.",
       });
       return;
     }
 
     if (xrSupported === false) {
-      toast.error("360 view unavailable", {
+      toast.error("VR unavailable", {
         description: isHeadsetBrowser()
           ? "This browser does not support WebXR. Open the site over HTTPS."
-          : "Open this page in your headset browser for 360 view.",
+          : "Open this page in your headset browser to enter VR.",
       });
       return;
     }
@@ -63,13 +63,13 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
     setEntering(true);
     try {
       enterSplatXR();
-      toast.message("Inside the room", {
-        description: "Look around with your head. Press right B to exit.",
+      toast.message("Inside VR", {
+        description: "Look around with your head. Press B to exit.",
       });
     } catch (err) {
       console.error("[EnterXR] failed:", err);
       setEntering(false);
-      toast.error("Could not enter 360 view", {
+      toast.error("Could not enter VR", {
         description: err instanceof Error ? err.message : "Try again over HTTPS.",
       });
     }
@@ -77,10 +77,10 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
 
   const label =
     inXR || isSplatXRActive()
-      ? "Exit 360"
+      ? "Exit VR"
       : entering
         ? "Entering…"
-        : "Enter 360";
+        : "Enter VR";
 
   return (
     <button

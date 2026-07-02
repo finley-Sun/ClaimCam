@@ -90,7 +90,16 @@ export function createXRLocomotion({
         }
 
         for (const source of session.inputSources) {
-            if (source.gamepad?.buttons?.[1]?.pressed) {
+            const gp = source.gamepad;
+            if (!gp?.buttons) continue;
+            // Quest mappings vary by browser/runtime; treat any "secondary/B/Y" press as exit.
+            // Common: buttons[1] (B/Y), some expose it as [5] or [4] depending on profile.
+            const pressed =
+                gp.buttons[1]?.pressed ||
+                gp.buttons[4]?.pressed ||
+                gp.buttons[5]?.pressed ||
+                gp.buttons[3]?.pressed; // fallback for some profiles
+            if (pressed) {
                 onExit();
                 return;
             }

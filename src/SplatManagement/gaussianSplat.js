@@ -1,6 +1,7 @@
 import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 import { computeSplatBounds } from './splatPlacement.js';
 import { isHeadsetBrowser } from './xrDevice.js';
+import { createXRVrUi } from './xrVrUi.js';
 import { createXRLocomotion, forceFullSplatVisibility, resetSplatVisibilityState } from './xrLocomotion.js';
 
 // mkkellogg uses quaternion [x, y, z, w]. [1,0,0,0] is 180° around X (upside down).
@@ -25,6 +26,7 @@ export class GaussianSplatViewer {
     this._xrActive = false;
     this._activeRoot = null;
     this._loadedUrl = null;
+    this._xrUi = null;
     this._xrItems = [];
     this._xrIsDamage = false;
     this._xrSession = null;
@@ -257,10 +259,22 @@ export class GaussianSplatViewer {
   }
 
   _attachXrSession(session) {
-    if (!session) return;
+    const viewer = this.viewer;
+    const camera = viewer?.camera;
+    if (!session || !viewer || !camera) return;
 
     this._detachXrUi();
     this._xrSession = session;
+
+    const { width, height } = this.getContainerSize();
+    this._xrUi = createXRVrUi({
+      camera,
+      items: this._xrItems,
+      mkViewer: viewer,
+      isDamage: this._xrIsDamage,
+      width,
+      height,
+    });
 
     this._xrLocomotion = createXRLocomotion({
       getViewer: () => this.viewer,
@@ -275,6 +289,8 @@ export class GaussianSplatViewer {
     this._xrLocomotion?.reset();
     this._xrLocomotion = null;
     this._xrLastFrameTime = 0;
+    this._xrUi?.destroy();
+    this._xrUi = null;
 
     const viewer = this.viewer;
     if (viewer && this._xrBaseUpdateFunc) {
@@ -319,6 +335,9 @@ export class GaussianSplatViewer {
             if (this._xrLocomotion && frame) {
               this._xrLocomotion.update(frame, deltaSec);
             }
+          if (this._xrUi) {
+            this._xrUi.render(viewer.renderer, viewer.camera);
+          }
           };
         }
         viewer.renderer.setAnimationLoop(viewer.selfDrivenUpdateFunc);
