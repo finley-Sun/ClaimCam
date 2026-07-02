@@ -47,16 +47,16 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
 
     if (!vrReady) {
       toast.error("Scene not ready", {
-        description: "Wait until the reconstruction appears, then tap Enter VR.",
+        description: "Wait until the reconstruction appears, then tap Fullscreen.",
       });
       return;
     }
 
     if (xrSupported === false) {
-      toast.error("VR unavailable", {
+      toast.error("Fullscreen unavailable", {
         description: isHeadsetBrowser()
-          ? "This browser does not support WebXR. Open the site over HTTPS."
-          : "Open this page in your headset browser to enter VR.",
+          ? "This browser does not support fullscreen mode."
+          : "Open this page in your headset browser for fullscreen mode.",
       });
       return;
     }
@@ -68,18 +68,18 @@ export function EnterXRButton({ splatUrl, vrReady }: EnterXRButtonProps) {
     } catch (err) {
       console.error("[EnterXR] failed:", err);
       setEntering(false);
-      toast.error("Could not enter VR", {
-        description: err instanceof Error ? err.message : "Try again over HTTPS.",
+      toast.error("Could not enter fullscreen", {
+        description: err instanceof Error ? err.message : "Try again.",
       });
     }
   };
 
   const label =
     inXR || isSplatXRActive()
-      ? "Exit VR"
+      ? "Exit Fullscreen"
       : entering
-        ? "Entering VR…"
-        : "Enter VR";
+        ? "Entering…"
+        : "Enter Fullscreen";
 
   return (
     <button
