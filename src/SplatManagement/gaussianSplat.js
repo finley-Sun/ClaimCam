@@ -1,8 +1,8 @@
 import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 import { computeSplatBounds } from './splatPlacement.js';
 import { isHeadsetBrowser } from './xrDevice.js';
-import { createXRVrUi, intersectExitHud } from './xrVrUi.js';
-import { createXRLocomotion, forceFullSplatVisibility } from './xrLocomotion.js';
+import { createXRVrUi } from './xrVrUi.js';
+import { createXRLocomotion, forceFullSplatVisibility, resetSplatVisibilityState } from './xrLocomotion.js';
 
 // mkkellogg uses quaternion [x, y, z, w]. [1,0,0,0] is 180° around X (upside down).
 const SPLAT_IDENTITY_ROTATION = [0, 0, 0, 1];
@@ -30,12 +30,11 @@ export class GaussianSplatViewer {
     this._xrItems = [];
     this._xrIsDamage = false;
     this._xrSession = null;
-    this._xrSelectHandler = null;
-    this._xrSqueezeHandler = null;
     this._xrBaseUpdateFunc = null;
     this._xrLocomotion = null;
     this._xrLastFrameTime = 0;
     this._controlsWereEnabled = true;
+    this._savedPixelRatio = null;
 
     this._resizeObserver = new ResizeObserver(() => this._onResize());
     this._resizeObserver.observe(this.container);
@@ -101,7 +100,7 @@ export class GaussianSplatViewer {
         position: [0, 0, 0],
         rotation: SPLAT_IDENTITY_ROTATION,
         scale: [1, 1, 1],
-        progressiveLoad: true,
+        progressiveLoad: !isHeadsetBrowser(),
         showLoadingUI: false,
       });
 
@@ -276,34 +275,8 @@ export class GaussianSplatViewer {
     });
     this._xrSession = session;
 
-    this._xrSelectHandler = (event) => {
-      const frame = event.frame;
-      const refSpace = viewer.renderer?.xr?.getReferenceSpace?.();
-      const mesh = this._xrUi?.exitMesh;
-      if (!frame || !refSpace || !mesh) return;
-
-      if (intersectExitHud(mesh, frame, refSpace, event.inputSource)) {
-        this.exitImmersiveVR();
-      }
-    };
-
-    this._xrSqueezeHandler = (event) => {
-      const frame = event.frame;
-      const refSpace = viewer.renderer?.xr?.getReferenceSpace?.();
-      const mesh = this._xrUi?.exitMesh;
-      if (!frame || !refSpace || !mesh) return;
-
-      if (intersectExitHud(mesh, frame, refSpace, event.inputSource)) {
-        this.exitImmersiveVR();
-      }
-    };
-
-    session.addEventListener('select', this._xrSelectHandler);
-    session.addEventListener('squeeze', this._xrSqueezeHandler);
-
     this._xrLocomotion = createXRLocomotion({
       getViewer: () => this.viewer,
-      getExitMesh: () => this._xrUi?.exitMesh,
       onExit: () => this.exitImmersiveVR(),
     });
     this._xrLocomotion.captureBaseReferenceSpace();
@@ -311,15 +284,9 @@ export class GaussianSplatViewer {
   }
 
   _detachXrUi() {
-    if (this._xrSession && this._xrSelectHandler) {
-      this._xrSession.removeEventListener('select', this._xrSelectHandler);
+    if (this._xrSession) {
+      this._xrSession = null;
     }
-    if (this._xrSession && this._xrSqueezeHandler) {
-      this._xrSession.removeEventListener('squeeze', this._xrSqueezeHandler);
-    }
-    this._xrSession = null;
-    this._xrSelectHandler = null;
-    this._xrSqueezeHandler = null;
     this._xrLocomotion?.reset();
     this._xrLocomotion = null;
     this._xrLastFrameTime = 0;
@@ -347,6 +314,8 @@ export class GaussianSplatViewer {
         this._xrActive = true;
         forceFullSplatVisibility(viewer.splatMesh);
         viewer.renderer.setClearColor(0xe2edd8, 1);
+        this._savedPixelRatio = viewer.renderer.getPixelRatio();
+        viewer.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
         if (viewer.controls) {
           this._controlsWereEnabled = viewer.controls.enabled;
           viewer.controls.enabled = false;
@@ -383,6 +352,11 @@ export class GaussianSplatViewer {
         if (viewer.controls) {
           viewer.controls.enabled = this._controlsWereEnabled;
         }
+        if (this._savedPixelRatio != null) {
+          viewer.renderer.setPixelRatio(this._savedPixelRatio);
+          this._savedPixelRatio = null;
+        }
+        resetSplatVisibilityState();
         viewer.renderer.setAnimationLoop(null);
         if (viewer.selfDrivenMode) {
           try { viewer.start(); } catch (e) { /* ignore */ }

@@ -1,53 +1,25 @@
 import * as THREE from 'three';
 import { resolveItemWorldPositions } from './splatMarkers.js';
 
-const _matrix = new THREE.Matrix4();
-const _origin = new THREE.Vector3();
-const _direction = new THREE.Vector3();
-const _raycaster = new THREE.Raycaster();
+const _camPos = new THREE.Vector3();
+const _forward = new THREE.Vector3();
 
-function drawExitButton(canvas) {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const w = canvas.width;
-    const h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
-
-    const radius = h / 2;
-    ctx.fillStyle = '#ef4444';
-    ctx.beginPath();
-    ctx.roundRect(0, 0, w, h, radius);
-    ctx.fill();
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 52px system-ui, -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('Exit VR', w / 2, h / 2 + 2);
-}
-
-function makeLabelSprite(text) {
+function makeTextSprite(text, { fontSize = 30, width = 480, height = 72 } = {}) {
     const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 96;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext('2d');
     if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = 'rgba(0,0,0,0.72)';
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = 'rgba(0,0,0,0.55)';
         ctx.beginPath();
-        ctx.roundRect(8, 8, canvas.width - 16, canvas.height - 16, 28);
+        ctx.roundRect(10, 10, width - 20, height - 20, 20);
         ctx.fill();
-        ctx.fillStyle = '#FF8A47';
-        ctx.beginPath();
-        ctx.arc(40, canvas.height / 2, 8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '600 34px system-ui, -apple-system, sans-serif';
-        ctx.textAlign = 'left';
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.font = `500 ${fontSize}px system-ui, -apple-system, sans-serif`;
+        ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const label = text.length > 22 ? `${text.slice(0, 20)}…` : text;
-        ctx.fillText(label, 64, canvas.height / 2 + 1);
+        ctx.fillText(text, width / 2, height / 2 + 1);
     }
 
     const texture = new THREE.CanvasTexture(canvas);
@@ -60,7 +32,7 @@ function makeLabelSprite(text) {
         toneMapped: false,
     });
     const sprite = new THREE.Sprite(material);
-    sprite.scale.set(0.42, 0.08, 1);
+    sprite.scale.set(0.48, 0.072, 1);
     sprite.userData.dispose = () => {
         texture.dispose();
         material.dispose();
@@ -68,17 +40,18 @@ function makeLabelSprite(text) {
     return sprite;
 }
 
-const _camPos = new THREE.Vector3();
+function makeLabelSprite(text) {
+    return makeTextSprite(text, { fontSize: 34, width: 512, height: 96 });
+}
 
 /**
- * Lightweight VR UI: world-anchored item labels + floor-anchored Exit VR panel.
- * Rendered in dedicated passes after the splat to avoid extra threeScene work.
+ * World-anchored item labels + floor-anchored "Press B to exit" hint.
  */
 export function createXRVrUi({ camera, items, mkViewer, isDamage, width, height }) {
     const worldScene = new THREE.Scene();
     const labelSprites = [];
-    const exitWorldPos = new THREE.Vector3();
-    let exitPlaced = false;
+    const hintWorldPos = new THREE.Vector3();
+    let hintPlaced = false;
 
     const worldPositions = resolveItemWorldPositions(mkViewer, items, width, height, { isDamage });
     for (const item of items) {
@@ -90,54 +63,32 @@ export function createXRVrUi({ camera, items, mkViewer, isDamage, width, height 
         labelSprites.push(sprite);
     }
 
-    const exitCanvas = document.createElement('canvas');
-    exitCanvas.width = 512;
-    exitCanvas.height = 128;
-    drawExitButton(exitCanvas);
-    const exitTexture = new THREE.CanvasTexture(exitCanvas);
-    exitTexture.colorSpace = THREE.SRGBColorSpace;
+    const hintSprite = makeTextSprite('Press B to exit', { fontSize: 28, width: 400, height: 64 });
+    worldScene.add(hintSprite);
 
-    const exitMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.52, 0.13),
-        new THREE.MeshBasicMaterial({
-            map: exitTexture,
-            transparent: true,
-            depthTest: true,
-            depthWrite: false,
-            toneMapped: false,
-        }),
-    );
-    exitMesh.renderOrder = 10000;
-    exitMesh.name = 'claimcam-exit-vr';
-
-    const exitRoot = new THREE.Group();
-    exitRoot.add(exitMesh);
-    worldScene.add(exitRoot);
-
-    const placeExitOnFloor = () => {
+    const placeHintOnFloor = () => {
         camera.getWorldPosition(_camPos);
         const floorY = mkViewer?.splatMesh?.calculatedSceneCenter?.y ?? _camPos.y - 1.2;
-        const forward = new THREE.Vector3();
-        camera.getWorldDirection(forward);
-        forward.y = 0;
-        if (forward.lengthSq() < 1e-6) forward.set(0, 0, -1);
-        forward.normalize();
 
-        exitWorldPos.copy(_camPos).addScaledVector(forward, 0.85);
-        exitWorldPos.y = floorY + 0.42;
-        exitRoot.position.copy(exitWorldPos);
-        exitRoot.lookAt(_camPos.x, exitWorldPos.y, _camPos.z);
-        exitPlaced = true;
+        camera.getWorldDirection(_forward);
+        _forward.y = 0;
+        if (_forward.lengthSq() < 1e-6) _forward.set(0, 0, -1);
+        _forward.normalize();
+
+        hintWorldPos.copy(_camPos).addScaledVector(_forward, 0.55);
+        hintWorldPos.y = floorY + 0.06;
+        hintSprite.position.copy(hintWorldPos);
+        hintPlaced = true;
     };
 
     const update = () => {
-        camera.updateMatrixWorld(true);
-        if (!exitPlaced) placeExitOnFloor();
+        if (!hintPlaced) placeHintOnFloor();
 
-        exitRoot.lookAt(camera.position.x, exitWorldPos.y, camera.position.z);
+        hintSprite.position.y = hintWorldPos.y;
+        hintSprite.lookAt(camera.position.x, hintWorldPos.y, camera.position.z);
 
-        for (const sprite of labelSprites) {
-            sprite.lookAt(camera.position);
+        for (let i = 0; i < labelSprites.length; i++) {
+            labelSprites[i].lookAt(camera.position);
         }
     };
 
@@ -148,7 +99,6 @@ export function createXRVrUi({ camera, items, mkViewer, isDamage, width, height 
 
         const prevAutoClear = renderer.autoClear;
         renderer.autoClear = false;
-
         renderer.render(worldScene, cam);
         renderer.autoClear = prevAutoClear;
     };
@@ -159,34 +109,14 @@ export function createXRVrUi({ camera, items, mkViewer, isDamage, width, height 
             sprite.userData.dispose?.();
         }
         labelSprites.length = 0;
-        worldScene.remove(exitRoot);
-        exitTexture.dispose();
-        exitMesh.geometry.dispose();
-        exitMesh.material.dispose();
+        worldScene.remove(hintSprite);
+        hintSprite.userData.dispose?.();
     };
 
     return {
-        exitMesh,
         worldScene,
         update,
         render,
         destroy,
     };
-}
-
-export function intersectExitHud(mesh, frame, referenceSpace, inputSource) {
-    if (!mesh || !frame || !referenceSpace || !inputSource?.targetRaySpace) {
-        return false;
-    }
-
-    const pose = frame.getPose(inputSource.targetRaySpace, referenceSpace);
-    if (!pose) return false;
-
-    _matrix.fromArray(pose.transform.matrix);
-    _origin.setFromMatrixPosition(_matrix);
-    _direction.set(0, 0, -1).transformDirection(_matrix).normalize();
-
-    mesh.updateMatrixWorld(true);
-    _raycaster.set(_origin, _direction);
-    return _raycaster.intersectObject(mesh, true).length > 0;
 }
