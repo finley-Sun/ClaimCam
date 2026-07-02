@@ -95,7 +95,7 @@ export function createXRVrUi({ camera, items, mkViewer, isDamage, width, height 
     exitTexture.colorSpace = THREE.SRGBColorSpace;
 
     const exitMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.4, 0.1),
+        new THREE.PlaneGeometry(0.52, 0.13),
         new THREE.MeshBasicMaterial({
             map: exitTexture,
             transparent: true,
@@ -106,7 +106,7 @@ export function createXRVrUi({ camera, items, mkViewer, isDamage, width, height 
     );
     exitMesh.renderOrder = 10000;
     exitMesh.name = 'claimcam-exit-vr';
-    exitMesh.position.set(0, -0.34, -0.72);
+    exitMesh.position.set(0, -0.3, -0.62);
 
     const exitRoot = new THREE.Group();
     exitRoot.matrixAutoUpdate = false;
@@ -116,7 +116,7 @@ export function createXRVrUi({ camera, items, mkViewer, isDamage, width, height 
     const update = () => {
         camera.updateMatrixWorld(true);
         exitRoot.matrix.copy(camera.matrixWorld);
-        exitRoot.matrixWorldNeedsUpdate = true;
+        exitRoot.updateMatrixWorld(true);
 
         for (const sprite of labelSprites) {
             sprite.lookAt(camera.position);
@@ -174,6 +174,7 @@ export function intersectExitHud(mesh, frame, referenceSpace, inputSource) {
     _origin.setFromMatrixPosition(_matrix);
     _direction.set(0, 0, -1).transformDirection(_matrix).normalize();
 
+    mesh.updateMatrixWorld(true);
     _raycaster.set(_origin, _direction);
-    return _raycaster.intersectObject(mesh, false).length > 0;
+    return _raycaster.intersectObject(mesh, true).length > 0;
 }

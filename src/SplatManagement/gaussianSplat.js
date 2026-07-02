@@ -2,6 +2,7 @@ import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 import { computeSplatBounds } from './splatPlacement.js';
 import { isHeadsetBrowser } from './xrDevice.js';
 import { createXRVrUi, intersectExitHud } from './xrVrUi.js';
+import { createXRLocomotion, forceFullSplatVisibility } from './xrLocomotion.js';
 
 // mkkellogg uses quaternion [x, y, z, w]. [1,0,0,0] is 180° around X (upside down).
 const SPLAT_IDENTITY_ROTATION = [0, 0, 0, 1];
@@ -30,7 +31,11 @@ export class GaussianSplatViewer {
     this._xrIsDamage = false;
     this._xrSession = null;
     this._xrSelectHandler = null;
+    this._xrSqueezeHandler = null;
     this._xrBaseUpdateFunc = null;
+    this._xrLocomotion = null;
+    this._xrLastFrameTime = 0;
+    this._controlsWereEnabled = true;
 
     this._resizeObserver = new ResizeObserver(() => this._onResize());
     this._resizeObserver.observe(this.container);
@@ -282,15 +287,42 @@ export class GaussianSplatViewer {
       }
     };
 
+    this._xrSqueezeHandler = (event) => {
+      const frame = event.frame;
+      const refSpace = viewer.renderer?.xr?.getReferenceSpace?.();
+      const mesh = this._xrUi?.exitMesh;
+      if (!frame || !refSpace || !mesh) return;
+
+      if (intersectExitHud(mesh, frame, refSpace, event.inputSource)) {
+        this.exitImmersiveVR();
+      }
+    };
+
     session.addEventListener('select', this._xrSelectHandler);
+    session.addEventListener('squeeze', this._xrSqueezeHandler);
+
+    this._xrLocomotion = createXRLocomotion({
+      getViewer: () => this.viewer,
+      getExitMesh: () => this._xrUi?.exitMesh,
+      onExit: () => this.exitImmersiveVR(),
+    });
+    this._xrLocomotion.captureBaseReferenceSpace();
+    this._xrLastFrameTime = 0;
   }
 
   _detachXrUi() {
     if (this._xrSession && this._xrSelectHandler) {
       this._xrSession.removeEventListener('select', this._xrSelectHandler);
     }
+    if (this._xrSession && this._xrSqueezeHandler) {
+      this._xrSession.removeEventListener('squeeze', this._xrSqueezeHandler);
+    }
     this._xrSession = null;
     this._xrSelectHandler = null;
+    this._xrSqueezeHandler = null;
+    this._xrLocomotion?.reset();
+    this._xrLocomotion = null;
+    this._xrLastFrameTime = 0;
     this._xrUi?.destroy();
     this._xrUi = null;
 
@@ -313,6 +345,12 @@ export class GaussianSplatViewer {
         if (!viewer) return;
         viewer.webXRActive = true;
         this._xrActive = true;
+        forceFullSplatVisibility(viewer.splatMesh);
+        viewer.renderer.setClearColor(0xe2edd8, 1);
+        if (viewer.controls) {
+          this._controlsWereEnabled = viewer.controls.enabled;
+          viewer.controls.enabled = false;
+        }
         this._onXRSessionStart?.();
         const session = renderer.xr.getSession?.();
         if (session) this._attachXrUi(session);
@@ -320,7 +358,15 @@ export class GaussianSplatViewer {
         if (!this._xrBaseUpdateFunc && viewer.selfDrivenUpdateFunc) {
           this._xrBaseUpdateFunc = viewer.selfDrivenUpdateFunc;
           viewer.selfDrivenUpdateFunc = (time, frame) => {
+            const deltaSec = this._xrLastFrameTime
+              ? (time - this._xrLastFrameTime) / 1000
+              : 0;
+            this._xrLastFrameTime = time;
+
             this._xrBaseUpdateFunc(time, frame);
+            if (this._xrLocomotion && frame) {
+              this._xrLocomotion.update(frame, deltaSec);
+            }
             if (this._xrUi) {
               this._xrUi.render(viewer.renderer, viewer.camera);
             }
@@ -334,6 +380,9 @@ export class GaussianSplatViewer {
         viewer.webXRActive = false;
         this._xrActive = false;
         this._detachXrUi();
+        if (viewer.controls) {
+          viewer.controls.enabled = this._controlsWereEnabled;
+        }
         viewer.renderer.setAnimationLoop(null);
         if (viewer.selfDrivenMode) {
           try { viewer.start(); } catch (e) { /* ignore */ }
