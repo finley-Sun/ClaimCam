@@ -4,6 +4,7 @@ import {
   resolveItemWorldPositions,
   projectWorldToScreen,
 } from "../../../SplatManagement/splatMarkers.js";
+import { isSplatXRActive, onXRStateChange } from "../../../SplatManagement/splatBridge.js";
 import type { InsuredItem } from "./data";
 import { ItemEvidencePopup } from "./ItemEvidencePopup";
 import { cn } from "./ui/utils";
@@ -30,9 +31,15 @@ export function SplatItemMarkers({
   const worldPositionsRef = useRef<Map<string, import("three").Vector3>>(new Map());
   const markerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [inXR, setInXR] = useState(isSplatXRActive());
 
   useEffect(() => {
-    if (!enabled || items.length === 0) return;
+    setInXR(isSplatXRActive());
+    return onXRStateChange(setInXR);
+  }, []);
+
+  useEffect(() => {
+    if (!enabled || inXR || items.length === 0) return;
 
     worldPositionsRef.current = new Map();
     let cancelled = false;
@@ -73,10 +80,10 @@ export function SplatItemMarkers({
     return () => {
       cancelled = true;
     };
-  }, [viewer, items, enabled, isDamage]);
+  }, [viewer, items, enabled, isDamage, inXR]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || inXR) return;
 
     let raf = 0;
 
@@ -108,7 +115,9 @@ export function SplatItemMarkers({
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [viewer, items, enabled, isDamage]);
+  }, [viewer, items, enabled, isDamage, inXR]);
+
+  if (inXR) return null;
 
   const activeId = hoveredId ?? highlightedItemId;
 

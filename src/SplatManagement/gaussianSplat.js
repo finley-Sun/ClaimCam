@@ -1,7 +1,7 @@
 import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 import { computeSplatBounds } from './splatPlacement.js';
 import { isHeadsetBrowser } from './xrDevice.js';
-import { createXRExitHud, intersectExitHud } from './xrExitHud.js';
+import { createXRVrUi, intersectExitHud } from './xrVrUi.js';
 
 // mkkellogg uses quaternion [x, y, z, w]. [1,0,0,0] is 180° around X (upside down).
 const SPLAT_IDENTITY_ROTATION = [0, 0, 0, 1];
@@ -25,8 +25,9 @@ export class GaussianSplatViewer {
     this._xrActive = false;
     this._activeRoot = null;
     this._loadedUrl = null;
-    this._exitOverlayEl = null;
-    this._exitHud = null;
+    this._xrUi = null;
+    this._xrItems = [];
+    this._xrIsDamage = false;
     this._xrSession = null;
     this._xrSelectHandler = null;
     this._xrBaseUpdateFunc = null;
@@ -209,9 +210,7 @@ export class GaussianSplatViewer {
   dispose() {
     this._killViewer();
     this._resizeObserver.disconnect();
-    this._detachExitHud();
-    this._exitOverlayEl?.remove();
-    this._exitOverlayEl = null;
+    this._detachXrUi();
   }
 
   _onResize() {
@@ -250,80 +249,32 @@ export class GaussianSplatViewer {
     this._readyCallback = callback;
   }
 
-  _ensureExitOverlay() {
-    if (this._exitOverlayEl) return this._exitOverlayEl;
-
-    const overlay = document.createElement('div');
-    overlay.id = 'claimcam-vr-exit-overlay';
-    overlay.setAttribute('data-testid', 'vr-exit-overlay');
-    // WebXR dom-overlay root must stay in the DOM and not use display:none at session start.
-    overlay.style.cssText = [
-      'position:fixed',
-      'left:0',
-      'right:0',
-      'bottom:0',
-      'height:96px',
-      'z-index:2147483647',
-      'display:flex',
-      'justify-content:center',
-      'align-items:flex-end',
-      'padding-bottom:max(24px, env(safe-area-inset-bottom))',
-      'pointer-events:none',
-      'visibility:hidden',
-    ].join(';');
-
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = 'Exit VR';
-    btn.setAttribute('aria-label', 'Exit VR');
-    btn.style.cssText = [
-      'position:relative',
-      'pointer-events:auto',
-      'padding:14px 24px',
-      'border:none',
-      'border-radius:9999px',
-      'background:#ef4444',
-      'color:#fff',
-      'font:600 16px/1 system-ui,-apple-system,sans-serif',
-      'cursor:pointer',
-      'box-shadow:0 12px 36px rgba(0,0,0,0.45)',
-    ].join(';');
-    btn.addEventListener('click', (event) => {
-      event.stopPropagation();
-      this.exitImmersiveVR();
-    });
-
-    overlay.appendChild(btn);
-    document.body.appendChild(overlay);
-    this._exitOverlayEl = overlay;
-    return overlay;
+  setXRItems(items, isDamage = false) {
+    this._xrItems = items ?? [];
+    this._xrIsDamage = isDamage;
   }
 
-  _showExitOverlay() {
-    const overlay = this._ensureExitOverlay();
-    overlay.style.visibility = 'visible';
-  }
-
-  _hideExitOverlay() {
-    if (this._exitOverlayEl) {
-      this._exitOverlayEl.style.visibility = 'hidden';
-    }
-  }
-
-  _attachExitHud(session) {
+  _attachXrUi(session) {
     const viewer = this.viewer;
     const camera = viewer?.camera;
-    const threeScene = viewer?.threeScene;
-    if (!camera || !threeScene || !session) return;
+    if (!camera || !session) return;
 
-    this._detachExitHud();
-    this._exitHud = createXRExitHud(camera, threeScene);
+    this._detachXrUi();
+    const { width, height } = this.getContainerSize();
+    this._xrUi = createXRVrUi({
+      camera,
+      items: this._xrItems,
+      mkViewer: viewer,
+      isDamage: this._xrIsDamage,
+      width,
+      height,
+    });
     this._xrSession = session;
 
     this._xrSelectHandler = (event) => {
       const frame = event.frame;
-      const refSpace = this.viewer?.renderer?.xr?.getReferenceSpace?.();
-      const mesh = this._exitHud?.mesh;
+      const refSpace = viewer.renderer?.xr?.getReferenceSpace?.();
+      const mesh = this._xrUi?.exitMesh;
       if (!frame || !refSpace || !mesh) return;
 
       if (intersectExitHud(mesh, frame, refSpace, event.inputSource)) {
@@ -334,14 +285,14 @@ export class GaussianSplatViewer {
     session.addEventListener('select', this._xrSelectHandler);
   }
 
-  _detachExitHud() {
+  _detachXrUi() {
     if (this._xrSession && this._xrSelectHandler) {
       this._xrSession.removeEventListener('select', this._xrSelectHandler);
     }
     this._xrSession = null;
     this._xrSelectHandler = null;
-    this._exitHud?.destroy();
-    this._exitHud = null;
+    this._xrUi?.destroy();
+    this._xrUi = null;
 
     const viewer = this.viewer;
     if (viewer && this._xrBaseUpdateFunc) {
@@ -362,17 +313,17 @@ export class GaussianSplatViewer {
         if (!viewer) return;
         viewer.webXRActive = true;
         this._xrActive = true;
-        this._showExitOverlay();
         this._onXRSessionStart?.();
         const session = renderer.xr.getSession?.();
-        if (session) this._attachExitHud(session);
-        // mkkellogg uses rAF when webXRMode is None — switch to XR loop for headset.
+        if (session) this._attachXrUi(session);
         try { viewer.stop(); } catch (e) { /* ignore */ }
         if (!this._xrBaseUpdateFunc && viewer.selfDrivenUpdateFunc) {
           this._xrBaseUpdateFunc = viewer.selfDrivenUpdateFunc;
           viewer.selfDrivenUpdateFunc = (time, frame) => {
-            this._exitHud?.updatePose?.();
             this._xrBaseUpdateFunc(time, frame);
+            if (this._xrUi) {
+              this._xrUi.render(viewer.renderer, viewer.camera);
+            }
           };
         }
         viewer.renderer.setAnimationLoop(viewer.selfDrivenUpdateFunc);
@@ -382,8 +333,7 @@ export class GaussianSplatViewer {
         if (!viewer) return;
         viewer.webXRActive = false;
         this._xrActive = false;
-        this._detachExitHud();
-        this._hideExitOverlay();
+        this._detachXrUi();
         viewer.renderer.setAnimationLoop(null);
         if (viewer.selfDrivenMode) {
           try { viewer.start(); } catch (e) { /* ignore */ }
@@ -416,23 +366,9 @@ export class GaussianSplatViewer {
       throw new Error('WebXR is not available in this browser');
     }
 
-    const overlay = this._ensureExitOverlay();
-    this._showExitOverlay();
-
-    const sessionOptionsWithOverlay = {
-      optionalFeatures: ['local-floor', 'dom-overlay'],
-      domOverlay: { root: overlay },
-    };
-    const sessionOptionsBasic = {
+    navigator.xr.requestSession('immersive-vr', {
       optionalFeatures: ['local-floor'],
-    };
-
-    // Quest immersive-vr does not keep HTML dom-overlay — 3D head-locked HUD handles Exit VR.
-    navigator.xr.requestSession('immersive-vr', sessionOptionsBasic)
-      .catch((basicErr) => {
-        console.warn('[GaussianSplat] basic VR session failed, trying dom-overlay:', basicErr);
-        return navigator.xr.requestSession('immersive-vr', sessionOptionsWithOverlay);
-      })
+    })
       .then(async (session) => {
         if (!session) return;
         this.viewer.webXRActive = true;
@@ -442,8 +378,7 @@ export class GaussianSplatViewer {
       .catch((err) => {
         this.viewer.webXRActive = false;
         this._xrActive = false;
-        this._detachExitHud();
-        this._hideExitOverlay();
+        this._detachXrUi();
         console.error('[GaussianSplat] VR session failed:', err);
         this._onXRSessionEnd?.();
       });

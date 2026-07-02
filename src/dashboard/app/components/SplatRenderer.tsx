@@ -56,6 +56,7 @@ export function SplatRenderer({
         viewer.setReadyCallback(() => {
             if (!cancelled) onReadyRef.current?.(true);
         });
+        viewer.setXRItems(items, !!isDamage);
 
         (async () => {
             try {
@@ -83,6 +84,10 @@ export function SplatRenderer({
             onReadyRef.current?.(false);
         };
     }, [splatUrl]);
+
+    useEffect(() => {
+        viewerRef.current?.setXRItems(items, !!isDamage);
+    }, [items, isDamage]);
 
     useEffect(() => {
         return () => {
