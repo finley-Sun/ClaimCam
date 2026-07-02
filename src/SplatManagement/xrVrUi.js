@@ -68,14 +68,17 @@ function makeLabelSprite(text) {
     return sprite;
 }
 
+const _camPos = new THREE.Vector3();
+
 /**
- * Lightweight VR UI: world-anchored item labels + view-fixed Exit VR button.
+ * Lightweight VR UI: world-anchored item labels + floor-anchored Exit VR panel.
  * Rendered in dedicated passes after the splat to avoid extra threeScene work.
  */
 export function createXRVrUi({ camera, items, mkViewer, isDamage, width, height }) {
-    const itemScene = new THREE.Scene();
-    const hudScene = new THREE.Scene();
+    const worldScene = new THREE.Scene();
     const labelSprites = [];
+    const exitWorldPos = new THREE.Vector3();
+    let exitPlaced = false;
 
     const worldPositions = resolveItemWorldPositions(mkViewer, items, width, height, { isDamage });
     for (const item of items) {
@@ -83,7 +86,7 @@ export function createXRVrUi({ camera, items, mkViewer, isDamage, width, height 
         if (!world) continue;
         const sprite = makeLabelSprite(item.name);
         sprite.position.copy(world);
-        itemScene.add(sprite);
+        worldScene.add(sprite);
         labelSprites.push(sprite);
     }
 
@@ -99,24 +102,39 @@ export function createXRVrUi({ camera, items, mkViewer, isDamage, width, height 
         new THREE.MeshBasicMaterial({
             map: exitTexture,
             transparent: true,
-            depthTest: false,
+            depthTest: true,
             depthWrite: false,
             toneMapped: false,
         }),
     );
     exitMesh.renderOrder = 10000;
     exitMesh.name = 'claimcam-exit-vr';
-    exitMesh.position.set(0, -0.3, -0.62);
 
     const exitRoot = new THREE.Group();
-    exitRoot.matrixAutoUpdate = false;
     exitRoot.add(exitMesh);
-    hudScene.add(exitRoot);
+    worldScene.add(exitRoot);
+
+    const placeExitOnFloor = () => {
+        camera.getWorldPosition(_camPos);
+        const floorY = mkViewer?.splatMesh?.calculatedSceneCenter?.y ?? _camPos.y - 1.2;
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward);
+        forward.y = 0;
+        if (forward.lengthSq() < 1e-6) forward.set(0, 0, -1);
+        forward.normalize();
+
+        exitWorldPos.copy(_camPos).addScaledVector(forward, 0.85);
+        exitWorldPos.y = floorY + 0.42;
+        exitRoot.position.copy(exitWorldPos);
+        exitRoot.lookAt(_camPos.x, exitWorldPos.y, _camPos.z);
+        exitPlaced = true;
+    };
 
     const update = () => {
         camera.updateMatrixWorld(true);
-        exitRoot.matrix.copy(camera.matrixWorld);
-        exitRoot.updateMatrixWorld(true);
+        if (!exitPlaced) placeExitOnFloor();
+
+        exitRoot.lookAt(camera.position.x, exitWorldPos.y, camera.position.z);
 
         for (const sprite of labelSprites) {
             sprite.lookAt(camera.position);
@@ -131,22 +149,17 @@ export function createXRVrUi({ camera, items, mkViewer, isDamage, width, height 
         const prevAutoClear = renderer.autoClear;
         renderer.autoClear = false;
 
-        if (labelSprites.length > 0) {
-            renderer.render(itemScene, cam);
-        }
-
-        renderer.clearDepth();
-        renderer.render(hudScene, cam);
+        renderer.render(worldScene, cam);
         renderer.autoClear = prevAutoClear;
     };
 
     const destroy = () => {
         for (const sprite of labelSprites) {
-            itemScene.remove(sprite);
+            worldScene.remove(sprite);
             sprite.userData.dispose?.();
         }
         labelSprites.length = 0;
-        hudScene.remove(exitRoot);
+        worldScene.remove(exitRoot);
         exitTexture.dispose();
         exitMesh.geometry.dispose();
         exitMesh.material.dispose();
@@ -154,8 +167,7 @@ export function createXRVrUi({ camera, items, mkViewer, isDamage, width, height 
 
     return {
         exitMesh,
-        itemScene,
-        hudScene,
+        worldScene,
         update,
         render,
         destroy,

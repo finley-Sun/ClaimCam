@@ -4,6 +4,7 @@ import { GaussianSplatViewer } from "../../../SplatManagement/gaussianSplat.js";
 import {
     setActiveSplatViewer,
     clearActiveSplatViewer,
+    prepareSplatVR,
 } from "../../../SplatManagement/splatBridge.js";
 import { SplatItemMarkers } from "./SplatItemMarkers";
 import type { InsuredItem } from "./data";
@@ -62,6 +63,10 @@ export function SplatRenderer({
             try {
                 await viewer.load(splatUrl);
                 setActiveSplatViewer(viewer, splatUrl);
+
+                prepareSplatVR(splatUrl).catch((err) => {
+                    console.warn("[SplatRenderer] VR viewer prep failed:", err);
+                });
 
                 if (!cancelled) {
                     setLoading(false);

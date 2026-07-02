@@ -603,7 +603,97 @@
                 const canvas = document.getElementById('application-canvas');
                 const settingsJson = await settings;
                 const viewer = await main(canvas, settingsJson, config);
-                const { app, events, state } = viewer.global;
+                const { app, events, state, camera } = viewer.global;
+
+                const installClaimCamVrHelpers = () => {
+                    const Entity = app.root.constructor;
+                    let exitEntity = null;
+                    let exitPos = null;
+
+                    const removeFloorExit = () => {
+                        if (exitEntity) {
+                            exitEntity.destroy();
+                            exitEntity = null;
+                            exitPos = null;
+                        }
+                    };
+
+                    const placeFloorExit = () => {
+                        removeFloorExit();
+                        const camPos = camera.getPosition();
+                        const Vec3 = camPos.constructor;
+                        const angles = new Vec3();
+                        camera.getEulerAngles(angles);
+
+                        const forward = {
+                            x: -Math.sin(angles.y * Math.PI / 180),
+                            z: -Math.cos(angles.y * Math.PI / 180),
+                        };
+                        const len = Math.hypot(forward.x, forward.z) || 1;
+                        forward.x /= len;
+                        forward.z /= len;
+
+                        exitPos = {
+                            x: camPos.x + forward.x * 0.85,
+                            y: 0.42,
+                            z: camPos.z + forward.z * 0.85,
+                            yaw: angles.y,
+                        };
+
+                        exitEntity = new Entity('claimcam-floor-exit');
+                        exitEntity.setPosition(exitPos.x, exitPos.y, exitPos.z);
+                        exitEntity.setEulerAngles(0, exitPos.yaw, 0);
+                        exitEntity.setLocalScale(0.55, 0.55, 0.55);
+                        exitEntity.addComponent('render', { type: 'box' });
+                        app.root.addChild(exitEntity);
+                    };
+
+                    const nearFloorExit = (origin, direction) => {
+                        if (!exitPos) return false;
+                        const ox = origin.x;
+                        const oy = origin.y;
+                        const oz = origin.z;
+                        const dx = direction.x;
+                        const dy = direction.y;
+                        const dz = direction.z;
+                        const planeY = exitPos.y;
+                        if (Math.abs(dy) < 1e-4) return false;
+                        const t = (planeY - oy) / dy;
+                        if (t < 0) return false;
+                        const hx = ox + dx * t;
+                        const hz = oz + dz * t;
+                        const dist = Math.hypot(hx - exitPos.x, hz - exitPos.z);
+                        return dist < 0.45;
+                    };
+
+                    app.xr.on('start', () => {
+                        placeFloorExit();
+                    });
+                    app.xr.on('end', removeFloorExit);
+
+                    app.xr.input.on('select', (inputSource) => {
+                        if (!app.xr.active || !exitPos) return;
+                        const origin = inputSource.getOrigin();
+                        const direction = inputSource.getDirection();
+                        if (nearFloorExit(origin, direction)) {
+                            app.xr.end();
+                        }
+                    });
+
+                    app.on('update', () => {
+                        if (!app.xr.active) return;
+                        const session = app.xr.session;
+                        if (!session) return;
+                        for (const source of session.inputSources) {
+                            if (source.gamepad?.buttons?.[1]?.pressed) {
+                                app.xr.end();
+                                return;
+                            }
+                        }
+                    });
+                };
+
+                installClaimCamVrHelpers();
 
                 events.on('loaded:changed', () => {
                     if (state.loaded) {
