@@ -1,11 +1,12 @@
 import { isHeadsetBrowser } from './xrDevice.js';
 import {
-    prepareSuperSplatVR,
+    mountSuperSplatViewer,
     enterSuperSplatVR,
     exitSuperSplatVR,
     hasActiveSuperSplatVR,
     isSuperSplatVRReady,
     isSuperSplatVRLoading,
+    isSuperSplatEmbedded,
     onSuperSplatXREnd,
 } from './superSplatVR.js';
 
@@ -32,7 +33,8 @@ function bindSuperSplatXREnd() {
         onXREndCallback?.();
         notifyXRStateChange(false);
 
-        if (activeViewer && activeUrl) {
+        // Embedded PlayCanvas stays mounted after VR — only restore mkkellogg on desktop.
+        if (activeViewer && activeUrl && !isSuperSplatEmbedded()) {
             try {
                 await activeViewer.load(activeUrl);
             } catch (err) {
@@ -48,11 +50,19 @@ export function setActiveSplatViewer(viewer, url) {
     wireViewerXR(viewer);
 }
 
+export function setActiveSplatUrl(url) {
+    activeUrl = url;
+}
+
 export function clearActiveSplatViewer(viewer) {
     if (activeViewer === viewer) {
         activeViewer = null;
         activeUrl = null;
     }
+}
+
+export function clearActiveSplatUrl() {
+    activeUrl = null;
 }
 
 export function onSplatXREnd(callback) {
@@ -74,17 +84,18 @@ function notifyXRStateChange(active) {
 }
 
 /**
- * Pre-load the PlayCanvas supersplat viewer for headset VR (sequential after 2D load).
+ * Mount PlayCanvas viewer on headset (single engine — no mkkellogg parallel load).
  */
-export async function prepareSplatVR(splatUrl) {
-    if (!isHeadsetBrowser() || !splatUrl) return;
+export async function loadHeadsetSplatViewer(container, splatUrl) {
+    if (!isHeadsetBrowser() || !container || !splatUrl) return;
     bindSuperSplatXREnd();
-    await prepareSuperSplatVR(splatUrl);
+    await mountSuperSplatViewer(container, splatUrl);
+    setActiveSplatUrl(splatUrl);
 }
 
-/** Enter immersive VR. On headset uses PlayCanvas supersplat-viewer stack. */
+/** Enter immersive VR. On headset uses embedded PlayCanvas supersplat viewer. */
 export function enterSplatXR() {
-    if (!activeViewer) {
+    if (!activeUrl) {
         throw new Error('Splat viewer is not ready');
     }
     if (!isHeadsetBrowser()) {
@@ -97,8 +108,11 @@ export function enterSplatXR() {
         throw new Error('VR viewer is still loading — wait a moment and try again');
     }
 
-    activeViewer.setXRActive(true);
-    activeViewer.destroyForXR();
+    if (activeViewer) {
+        activeViewer.setXRActive(true);
+        activeViewer.destroyForXR();
+    }
+
     enterSuperSplatVR();
     notifyXRStateChange(true);
 }

@@ -671,14 +671,16 @@
                     });
                     app.xr.on('end', removeFloorExit);
 
-                    app.xr.input.on('select', (inputSource) => {
-                        if (!app.xr.active || !exitPos) return;
-                        const origin = inputSource.getOrigin();
-                        const direction = inputSource.getDirection();
-                        if (nearFloorExit(origin, direction)) {
-                            app.xr.end();
-                        }
-                    });
+                    if (app.xr?.input) {
+                        app.xr.input.on('select', (inputSource) => {
+                            if (!app.xr.active || !exitPos) return;
+                            const origin = inputSource.getOrigin();
+                            const direction = inputSource.getDirection();
+                            if (nearFloorExit(origin, direction)) {
+                                app.xr.end();
+                            }
+                        });
+                    }
 
                     app.on('update', () => {
                         if (!app.xr.active) return;
