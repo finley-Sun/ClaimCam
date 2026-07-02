@@ -19,7 +19,6 @@ type SplatRendererProps = {
     controlsDisabled?: boolean;
 };
 
-/** Desktop / non-headset 2D splat preview (mkkellogg). */
 export function SplatRenderer({
     roomName,
     splatUrl,

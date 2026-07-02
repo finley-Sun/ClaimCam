@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Archive } from "lucide-react";
 import { SplatRenderer } from "./SplatRenderer";
-import { HeadsetVRView } from "./HeadsetVRView";
 import { RoomSwitcher } from "./RoomSwitcher";
 import { TimeframeSelector } from "./TimeframeSelector";
 import { ArchivePanel } from "./ArchivePanel";
@@ -9,7 +8,6 @@ import { EnterXRButton } from "./EnterXRButton";
 import { cn } from "./ui/utils";
 import { getRoomsByUser, LOGS_BY_USER, type Room, type TimeframeLog, type UserType } from "./data";
 import { resolveSplatUrl } from "../../lib/splatUrls";
-import { isHeadsetBrowser } from "../../../SplatManagement/xrDevice.js";
 
 type PropertyViewProps = {
     userType: UserType;
@@ -36,7 +34,6 @@ export function PropertyView({
     highlightedItemId,
     onHighlight,
 }: PropertyViewProps) {
-    const headsetMode = isHeadsetBrowser();
     const [rooms, setRooms] = useState<Room[]>(() => getRoomsByUser(userType));
     const room: Room = rooms.find((r) => r.id === activeRoomId) ?? rooms[0];
     const logs = LOGS_BY_USER[userType];
@@ -45,6 +42,7 @@ export function PropertyView({
     const splatUrl = resolveSplatUrl(room.id, log.type);
     const [splatReady, setSplatReady] = useState(false);
 
+    /* Track whether any modal is open to disable renderer controls */
     const [roomFlowOpen, setRoomFlowOpen] = useState(false);
     const [archiveFlowOpen, setArchiveFlowOpen] = useState(false);
     const [claimFlowOpen, setClaimFlowOpen] = useState(false);
@@ -55,44 +53,9 @@ export function PropertyView({
         onRoomChange(newRoom.id);
     }
 
-    if (headsetMode) {
-        return (
-            <div className="fixed inset-0 z-[9990] bg-[#0b0b0f]">
-                <HeadsetVRView
-                    key={splatUrl}
-                    splatUrl={splatUrl}
-                    roomName={room.name}
-                />
-
-                {/* Minimal room / timeframe picker while not in immersive VR */}
-                <div className="pointer-events-none absolute left-4 top-4 z-[10002] flex flex-col gap-2">
-                    <div className="pointer-events-auto flex flex-wrap gap-2">
-                        <RoomSwitcher
-                            rooms={rooms}
-                            activeRoomId={activeRoomId}
-                            onSelect={onRoomChange}
-                            onAddRoom={handleAddRoom}
-                            onFlowOpenChange={setRoomFlowOpen}
-                        />
-                        <TimeframeSelector
-                            logs={logs}
-                            activeLogId={activeLogId}
-                            onSelect={onLogChange}
-                            onFlowOpenChange={setClaimFlowOpen}
-                        />
-                    </div>
-                    {isDamage && (
-                        <div className="rounded-full border border-destructive/40 bg-destructive/15 px-3 py-1 text-xs text-destructive backdrop-blur-md">
-                            {log.label}
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="flex h-full min-w-0 flex-1">
+            {/* Renderer stage */}
             <div className="relative min-w-0 flex-1 overflow-hidden">
                 <SplatRenderer
                     key={splatUrl}
@@ -106,6 +69,7 @@ export function PropertyView({
                     controlsDisabled={controlsDisabled}
                 />
 
+                {/* Top-left floating controls */}
                 <div className="absolute left-5 top-5 z-10 flex flex-col items-start gap-2">
                     <div className="flex flex-wrap items-center gap-2.5">
                         <RoomSwitcher
@@ -129,6 +93,7 @@ export function PropertyView({
                     )}
                 </div>
 
+                {/* Archive toggle (top-right) */}
                 <button
                     onClick={onToggleArchive}
                     className={cn(
@@ -142,11 +107,13 @@ export function PropertyView({
                     <span>Archive</span>
                 </button>
 
+                {/* Enter XR (bottom-right of the stage) */}
                 <div className="absolute bottom-6 right-6 z-10">
                     <EnterXRButton splatUrl={splatUrl} vrReady={splatReady} />
                 </div>
             </div>
 
+            {/* Right archive column */}
             <ArchivePanel
                 open={archiveOpen}
                 room={room}

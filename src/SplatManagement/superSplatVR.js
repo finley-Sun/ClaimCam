@@ -1,6 +1,7 @@
 /**
- * SuperSplat PlayCanvas VR — fullscreen headset launcher (supersplat-viewer stack).
- * On Quest we use one fullscreen iframe only; no parallel mkkellogg 2D engine.
+ * SuperSplat PlayCanvas VR — uses the same viewer stack as supersplat-viewer
+ * (native gsplat + app.xr.start) inside a pre-loaded iframe so Enter XR can
+ * fire startVR synchronously from the user's click (required on Quest).
  */
 
 import { prefersSequentialVRLoad } from './xrDevice.js';
@@ -12,18 +13,14 @@ let currentUrl = null;
 let preparePromise = null;
 let xrActive = false;
 let onXREndCallback = null;
-let onReadyCallback = null;
 
 function viewerBaseUrl() {
     const base = import.meta.env.BASE_URL || './';
     return new URL('vr-viewer/index.html', new URL(base, window.location.href)).href;
 }
 
-function ensureIframe({ visible = false } = {}) {
-    if (iframe) {
-        if (visible) iframe.style.display = 'block';
-        return iframe;
-    }
+function ensureIframe() {
+    if (iframe) return iframe;
 
     iframe = document.createElement('iframe');
     iframe.id = 'supersplat-vr-iframe';
@@ -36,7 +33,7 @@ function ensureIframe({ visible = false } = {}) {
         'height:100%',
         'border:0',
         'z-index:10000',
-        visible ? 'display:block' : 'display:none',
+        'display:none',
         'background:#dce8d4',
     ].join(';');
 
@@ -65,7 +62,6 @@ function handleMessage(event) {
         case 'claimcam-vr-ready':
             ready = true;
             loading = false;
-            onReadyCallback?.();
             console.log('[SuperSplat VR] viewer ready');
             break;
         case 'claimcam-vr-error':
@@ -76,11 +72,10 @@ function handleMessage(event) {
             break;
         case 'claimcam-vr-started':
             xrActive = true;
-            if (iframe) iframe.style.display = 'block';
             break;
         case 'claimcam-vr-ended':
             xrActive = false;
-            if (iframe) iframe.style.display = 'block';
+            if (iframe) iframe.style.display = 'none';
             onXREndCallback?.();
             break;
         default:
@@ -128,12 +123,12 @@ function waitForVRReady(frame, timeoutMs = 180000) {
     });
 }
 
-function startPrepare(splatUrl, { visibleDuringLoad = false } = {}) {
+function startPrepare(splatUrl) {
     currentUrl = splatUrl;
     ready = false;
     loading = true;
 
-    const frame = ensureIframe({ visible: visibleDuringLoad });
+    const frame = ensureIframe();
     frame.src = buildViewerUrl(splatUrl);
 
     preparePromise = waitForVRReady(frame)
@@ -148,13 +143,12 @@ function startPrepare(splatUrl, { visibleDuringLoad = false } = {}) {
 }
 
 /**
- * Fullscreen headset launcher — load splat in a visible fullscreen iframe.
+ * Pre-load the PlayCanvas gsplat viewer while the 2D splat is visible.
  */
-export async function launchHeadsetVR(splatUrl) {
+export async function prepareSuperSplatVR(splatUrl) {
     if (!splatUrl) return;
 
     if (currentUrl === splatUrl && ready) {
-        ensureIframe({ visible: true });
         return;
     }
 
@@ -166,34 +160,29 @@ export async function launchHeadsetVR(splatUrl) {
         await teardownSuperSplatVR();
     }
 
-    return startPrepare(splatUrl, { visibleDuringLoad: true });
+    return startPrepare(splatUrl);
 }
 
-/** Desktop-only background warm-up (hidden iframe). */
-export async function prepareSuperSplatVR(splatUrl) {
-    if (!splatUrl) return;
-
-    if (currentUrl === splatUrl && ready) return;
-    if (currentUrl === splatUrl && preparePromise) return preparePromise;
-
-    if (currentUrl !== splatUrl) {
-        await teardownSuperSplatVR();
-    }
-
-    return startPrepare(splatUrl, { visibleDuringLoad: false });
-}
-
+/**
+ * Fire-and-forget VR warm-up after the 2D splat is already on screen.
+ * Skipped on Quest — both engines at once exhaust GPU memory.
+ */
 export function warmSuperSplatVR(splatUrl) {
     if (!splatUrl || prefersSequentialVRLoad()) return;
 
-    if (currentUrl === splatUrl && (ready || preparePromise)) return;
+    if (currentUrl === splatUrl && (ready || preparePromise)) {
+        return;
+    }
 
     prepareSuperSplatVR(splatUrl).catch((err) => {
         console.warn('[SuperSplat VR] background warm failed:', err);
     });
 }
 
-/** Enter immersive VR — call synchronously from a user tap/click. */
+/**
+ * Show the viewer and enter immersive VR. Call synchronously from a user click
+ * (do not await before this runs).
+ */
 export function enterSuperSplatVR() {
     if (!iframe || !ready) {
         throw new Error('SuperSplat VR viewer is not ready');
@@ -220,11 +209,6 @@ export function isSuperSplatVRReady() {
 
 export function isSuperSplatVRLoading() {
     return loading && !ready;
-}
-
-export function onSuperSplatVRReady(callback) {
-    onReadyCallback = callback;
-    if (ready) callback();
 }
 
 export function exitSuperSplatVR() {

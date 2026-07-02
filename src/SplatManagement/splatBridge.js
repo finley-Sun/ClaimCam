@@ -1,34 +1,14 @@
 import { isHeadsetBrowser } from './xrDevice.js';
-import {
-    launchHeadsetVR,
-    enterSuperSplatVR,
-    exitSuperSplatVR,
-    hasActiveSuperSplatVR,
-    isSuperSplatVRReady,
-    isSuperSplatVRLoading,
-    onSuperSplatXREnd,
-} from './superSplatVR.js';
 
 let activeViewer = null;
 let activeUrl = null;
 let onXREndCallback = null;
 let xrStateListeners = [];
-let superSplatEndBound = false;
 
 function wireViewerXR(viewer) {
     if (!viewer) return;
     viewer.setOnXRSessionStart(() => notifyXRStateChange(true));
     viewer.setOnXRSessionEnd(() => {
-        onXREndCallback?.();
-        notifyXRStateChange(false);
-    });
-}
-
-function bindSuperSplatXREnd() {
-    if (superSplatEndBound) return;
-    superSplatEndBound = true;
-
-    onSuperSplatXREnd(() => {
         onXREndCallback?.();
         notifyXRStateChange(false);
     });
@@ -40,10 +20,6 @@ export function setActiveSplatViewer(viewer, url) {
     wireViewerXR(viewer);
 }
 
-export function setActiveSplatUrl(url) {
-    activeUrl = url;
-}
-
 export function clearActiveSplatViewer(viewer) {
     if (activeViewer === viewer) {
         activeViewer = null;
@@ -51,14 +27,11 @@ export function clearActiveSplatViewer(viewer) {
     }
 }
 
-export function clearActiveSplatUrl() {
-    activeUrl = null;
-}
-
 export function onSplatXREnd(callback) {
     onXREndCallback = callback;
 }
 
+/** Register a listener that fires whenever XR state changes. */
 export function onXRStateChange(callback) {
     xrStateListeners.push(callback);
     return () => {
@@ -72,48 +45,30 @@ function notifyXRStateChange(active) {
     }
 }
 
-/** Fullscreen headset load — single PlayCanvas engine. */
-export async function loadHeadsetVR(splatUrl) {
-    if (!isHeadsetBrowser() || !splatUrl) return;
-    bindSuperSplatXREnd();
-    setActiveSplatUrl(splatUrl);
-    await launchHeadsetVR(splatUrl);
-}
-
+/** Enter immersive VR on the already-loaded splat (must run from a user click). */
 export function enterSplatXR() {
-    if (!activeUrl) {
+    if (!activeViewer) {
         throw new Error('Splat viewer is not ready');
     }
     if (!isHeadsetBrowser()) {
         throw new Error('VR requires a headset browser');
     }
-
-    bindSuperSplatXREnd();
-
-    if (!isSuperSplatVRReady()) {
-        throw new Error('VR viewer is still loading');
-    }
-
-    enterSuperSplatVR();
-    notifyXRStateChange(true);
+    activeViewer.enterImmersiveVR();
 }
 
 export function exitSplatXR() {
-    if (hasActiveSuperSplatVR()) {
-        exitSuperSplatVR();
-        return;
-    }
     activeViewer?.exitImmersiveVR();
 }
 
 export function isSplatXRActive() {
-    return hasActiveSuperSplatVR() || (activeViewer?.isInImmersiveVR() ?? false);
+    return activeViewer?.isInImmersiveVR() ?? false;
 }
 
 export function isWebXRSupported() {
     return typeof navigator !== 'undefined' && !!navigator.xr?.requestSession;
 }
 
+/** True when this browser can start immersive-vr (any WebXR-capable headset browser). */
 export async function checkImmersiveVRSupported() {
     if (!navigator.xr?.isSessionSupported) return false;
     try {
@@ -123,12 +78,14 @@ export async function checkImmersiveVRSupported() {
     }
 }
 
+/** VR entry is limited to real headset browsers — desktop/emulator sessions are blocked. */
 export async function checkHeadsetVRAvailable() {
     if (!isHeadsetBrowser()) return false;
     return checkImmersiveVRSupported();
 }
 
-export { isSuperSplatVRReady, isSuperSplatVRLoading };
-
+/** @deprecated Native WebXR keeps the same viewer — no teardown needed. */
 export function destroySplatForXR() {}
+
+/** @deprecated Native WebXR keeps the same viewer — no reload needed. */
 export async function restoreSplatAfterXR() {}
