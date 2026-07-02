@@ -1,6 +1,7 @@
 import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 import { computeSplatBounds } from './splatPlacement.js';
 import { isHeadsetBrowser } from './xrDevice.js';
+import { createXRExitHud, intersectExitHud } from './xrExitHud.js';
 
 // mkkellogg uses quaternion [x, y, z, w]. [1,0,0,0] is 180° around X (upside down).
 const SPLAT_IDENTITY_ROTATION = [0, 0, 0, 1];
@@ -25,6 +26,10 @@ export class GaussianSplatViewer {
     this._activeRoot = null;
     this._loadedUrl = null;
     this._exitOverlayEl = null;
+    this._exitHud = null;
+    this._xrSession = null;
+    this._xrSelectHandler = null;
+    this._xrBaseUpdateFunc = null;
 
     this._resizeObserver = new ResizeObserver(() => this._onResize());
     this._resizeObserver.observe(this.container);
@@ -204,6 +209,7 @@ export class GaussianSplatViewer {
   dispose() {
     this._killViewer();
     this._resizeObserver.disconnect();
+    this._detachExitHud();
     this._exitOverlayEl?.remove();
     this._exitOverlayEl = null;
   }
@@ -304,6 +310,46 @@ export class GaussianSplatViewer {
     }
   }
 
+  _attachExitHud(session) {
+    const viewer = this.viewer;
+    const camera = viewer?.camera;
+    const threeScene = viewer?.threeScene;
+    if (!camera || !threeScene || !session) return;
+
+    this._detachExitHud();
+    this._exitHud = createXRExitHud(camera, threeScene);
+    this._xrSession = session;
+
+    this._xrSelectHandler = (event) => {
+      const frame = event.frame;
+      const refSpace = this.viewer?.renderer?.xr?.getReferenceSpace?.();
+      const mesh = this._exitHud?.mesh;
+      if (!frame || !refSpace || !mesh) return;
+
+      if (intersectExitHud(mesh, frame, refSpace, event.inputSource)) {
+        this.exitImmersiveVR();
+      }
+    };
+
+    session.addEventListener('select', this._xrSelectHandler);
+  }
+
+  _detachExitHud() {
+    if (this._xrSession && this._xrSelectHandler) {
+      this._xrSession.removeEventListener('select', this._xrSelectHandler);
+    }
+    this._xrSession = null;
+    this._xrSelectHandler = null;
+    this._exitHud?.destroy();
+    this._exitHud = null;
+
+    const viewer = this.viewer;
+    if (viewer && this._xrBaseUpdateFunc) {
+      viewer.selfDrivenUpdateFunc = this._xrBaseUpdateFunc;
+      this._xrBaseUpdateFunc = null;
+    }
+  }
+
   _ensureXR() {
     const viewer = this.viewer;
     const renderer = viewer?.renderer;
@@ -318,8 +364,17 @@ export class GaussianSplatViewer {
         this._xrActive = true;
         this._showExitOverlay();
         this._onXRSessionStart?.();
+        const session = renderer.xr.getSession?.();
+        if (session) this._attachExitHud(session);
         // mkkellogg uses rAF when webXRMode is None — switch to XR loop for headset.
         try { viewer.stop(); } catch (e) { /* ignore */ }
+        if (!this._xrBaseUpdateFunc && viewer.selfDrivenUpdateFunc) {
+          this._xrBaseUpdateFunc = viewer.selfDrivenUpdateFunc;
+          viewer.selfDrivenUpdateFunc = (time, frame) => {
+            this._exitHud?.updatePose?.();
+            this._xrBaseUpdateFunc(time, frame);
+          };
+        }
         viewer.renderer.setAnimationLoop(viewer.selfDrivenUpdateFunc);
         viewer.selfDrivenModeRunning = true;
       });
@@ -327,6 +382,7 @@ export class GaussianSplatViewer {
         if (!viewer) return;
         viewer.webXRActive = false;
         this._xrActive = false;
+        this._detachExitHud();
         this._hideExitOverlay();
         viewer.renderer.setAnimationLoop(null);
         if (viewer.selfDrivenMode) {
@@ -371,11 +427,11 @@ export class GaussianSplatViewer {
       optionalFeatures: ['local-floor'],
     };
 
-    // dom-overlay keeps the Exit VR control visible inside the headset.
-    navigator.xr.requestSession('immersive-vr', sessionOptionsWithOverlay)
-      .catch((overlayErr) => {
-        console.warn('[GaussianSplat] dom-overlay unavailable, retrying without overlay:', overlayErr);
-        return navigator.xr.requestSession('immersive-vr', sessionOptionsBasic);
+    // Quest immersive-vr does not keep HTML dom-overlay — 3D head-locked HUD handles Exit VR.
+    navigator.xr.requestSession('immersive-vr', sessionOptionsBasic)
+      .catch((basicErr) => {
+        console.warn('[GaussianSplat] basic VR session failed, trying dom-overlay:', basicErr);
+        return navigator.xr.requestSession('immersive-vr', sessionOptionsWithOverlay);
       })
       .then(async (session) => {
         if (!session) return;
@@ -386,6 +442,7 @@ export class GaussianSplatViewer {
       .catch((err) => {
         this.viewer.webXRActive = false;
         this._xrActive = false;
+        this._detachExitHud();
         this._hideExitOverlay();
         console.error('[GaussianSplat] VR session failed:', err);
         this._onXRSessionEnd?.();
