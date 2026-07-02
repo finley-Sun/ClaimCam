@@ -606,6 +606,7 @@
                 const { app, events, state, camera } = viewer.global;
 
                 const installClaimCamVrHelpers = () => {
+                    try {
                     const Entity = app.root.constructor;
                     let exitEntity = null;
                     let exitPos = null;
@@ -693,6 +694,9 @@
                             }
                         }
                     });
+                    } catch (err) {
+                        console.warn('[VR viewer] claimcam helpers skipped:', err);
+                    }
                 };
 
                 installClaimCamVrHelpers();

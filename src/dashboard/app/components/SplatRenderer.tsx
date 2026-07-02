@@ -4,12 +4,7 @@ import { GaussianSplatViewer } from "../../../SplatManagement/gaussianSplat.js";
 import {
     setActiveSplatViewer,
     clearActiveSplatViewer,
-    setActiveSplatUrl,
-    clearActiveSplatUrl,
-    loadHeadsetSplatViewer,
 } from "../../../SplatManagement/splatBridge.js";
-import { teardownSuperSplatVR } from "../../../SplatManagement/superSplatVR.js";
-import { isHeadsetBrowser } from "../../../SplatManagement/xrDevice.js";
 import { SplatItemMarkers } from "./SplatItemMarkers";
 import type { InsuredItem } from "./data";
 
@@ -24,6 +19,7 @@ type SplatRendererProps = {
     controlsDisabled?: boolean;
 };
 
+/** Desktop / non-headset 2D splat preview (mkkellogg). */
 export function SplatRenderer({
     roomName,
     splatUrl,
@@ -40,7 +36,6 @@ export function SplatRenderer({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [spatialReady, setSpatialReady] = useState(false);
-    const headsetMode = isHeadsetBrowser();
 
     onReadyRef.current = onReadyChange;
 
@@ -48,46 +43,17 @@ export function SplatRenderer({
         const container = containerRef.current;
         if (!container || !splatUrl) return;
 
+        if (!viewerRef.current) {
+            viewerRef.current = new GaussianSplatViewer({ container });
+        }
+
+        const viewer = viewerRef.current;
         let cancelled = false;
 
         setLoading(true);
         setError(null);
         setSpatialReady(false);
         onReadyRef.current?.(false);
-
-        if (headsetMode) {
-            (async () => {
-                try {
-                    await loadHeadsetSplatViewer(container, splatUrl);
-                    if (!cancelled) {
-                        setLoading(false);
-                        setSpatialReady(true);
-                        onReadyRef.current?.(true);
-                    }
-                } catch (err) {
-                    console.error("[SplatRenderer] headset viewer load failed:", err);
-                    if (!cancelled) {
-                        setError("Could not load 3D reconstruction");
-                        setLoading(false);
-                        onReadyRef.current?.(false);
-                    }
-                }
-            })();
-
-            return () => {
-                cancelled = true;
-                setSpatialReady(false);
-                clearActiveSplatUrl();
-                onReadyRef.current?.(false);
-                teardownSuperSplatVR();
-            };
-        }
-
-        if (!viewerRef.current) {
-            viewerRef.current = new GaussianSplatViewer({ container });
-        }
-
-        const viewer = viewerRef.current;
         viewer.setReadyCallback(() => {
             if (!cancelled) onReadyRef.current?.(true);
         });
@@ -118,7 +84,7 @@ export function SplatRenderer({
             setSpatialReady(false);
             onReadyRef.current?.(false);
         };
-    }, [splatUrl, headsetMode]);
+    }, [splatUrl]);
 
     useEffect(() => {
         viewerRef.current?.setXRItems(items, !!isDamage);
@@ -172,7 +138,7 @@ export function SplatRenderer({
                 }}
             />
 
-            {!headsetMode && spatialReady && viewerRef.current && items.length > 0 && (
+            {spatialReady && viewerRef.current && items.length > 0 && (
                 <SplatItemMarkers
                     viewer={viewerRef.current}
                     items={items}
@@ -186,9 +152,7 @@ export function SplatRenderer({
             {loading && (
                 <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/40 backdrop-blur-sm">
                     <Loader2 className="size-10 animate-spin text-primary" />
-                    <p className="text-sm text-muted-foreground">
-                        {headsetMode ? "Loading reconstruction..." : "Loading reconstruction..."}
-                    </p>
+                    <p className="text-sm text-muted-foreground">Loading reconstruction...</p>
                 </div>
             )}
 
@@ -204,7 +168,7 @@ export function SplatRenderer({
                 <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                     3D Gaussian Splat · {roomName}
                 </p>
-                {!headsetMode && spatialReady && items.length > 0 && (
+                {spatialReady && items.length > 0 && (
                     <p className="mt-1 text-[10px] text-muted-foreground/70">
                         Item labels track in 3D · click a pin to highlight in archive
                     </p>

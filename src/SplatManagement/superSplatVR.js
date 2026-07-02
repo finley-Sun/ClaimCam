@@ -1,7 +1,6 @@
 /**
- * SuperSplat PlayCanvas VR — uses the same viewer stack as supersplat-viewer
- * (native gsplat + app.xr.start). On Quest, the iframe is the only splat engine
- * (embedded in the scene container) to avoid dual WebGL contexts.
+ * SuperSplat PlayCanvas VR — fullscreen headset launcher (supersplat-viewer stack).
+ * On Quest we use one fullscreen iframe only; no parallel mkkellogg 2D engine.
  */
 
 import { prefersSequentialVRLoad } from './xrDevice.js';
@@ -14,60 +13,34 @@ let preparePromise = null;
 let xrActive = false;
 let onXREndCallback = null;
 let onReadyCallback = null;
-let mountContainer = null;
-let embedMode = false;
 
 function viewerBaseUrl() {
     const base = import.meta.env.BASE_URL || './';
     return new URL('vr-viewer/index.html', new URL(base, window.location.href)).href;
 }
 
-function iframeStyleEmbedded() {
-    return [
-        'position:absolute',
-        'inset:0',
-        'width:100%',
-        'height:100%',
-        'border:0',
-        'z-index:1',
-        'display:block',
-        'background:#dce8d4',
-    ].join(';');
-}
+function ensureIframe({ visible = false } = {}) {
+    if (iframe) {
+        if (visible) iframe.style.display = 'block';
+        return iframe;
+    }
 
-function iframeStyleFullscreenHidden() {
-    return [
+    iframe = document.createElement('iframe');
+    iframe.id = 'supersplat-vr-iframe';
+    iframe.title = 'VR reconstruction viewer';
+    iframe.setAttribute('allow', 'xr-spatial-tracking; fullscreen');
+    iframe.style.cssText = [
         'position:fixed',
         'inset:0',
         'width:100%',
         'height:100%',
         'border:0',
         'z-index:10000',
-        'display:none',
+        visible ? 'display:block' : 'display:none',
         'background:#dce8d4',
     ].join(';');
-}
 
-function ensureIframe(container = null) {
-    if (iframe) return iframe;
-
-    iframe = document.createElement('iframe');
-    iframe.id = 'supersplat-vr-iframe';
-    iframe.title = 'VR reconstruction viewer';
-    iframe.setAttribute('allow', 'xr-spatial-tracking; fullscreen');
-
-    if (container) {
-        embedMode = true;
-        mountContainer = container;
-        iframe.style.cssText = iframeStyleEmbedded();
-        container.appendChild(iframe);
-    } else {
-        embedMode = false;
-        mountContainer = null;
-        iframe.style.cssText = iframeStyleFullscreenHidden();
-        document.body.appendChild(iframe);
-    }
-
+    document.body.appendChild(iframe);
     return iframe;
 }
 
@@ -103,12 +76,11 @@ function handleMessage(event) {
             break;
         case 'claimcam-vr-started':
             xrActive = true;
+            if (iframe) iframe.style.display = 'block';
             break;
         case 'claimcam-vr-ended':
             xrActive = false;
-            if (iframe && !embedMode) {
-                iframe.style.display = 'none';
-            }
+            if (iframe) iframe.style.display = 'block';
             onXREndCallback?.();
             break;
         default:
@@ -156,15 +128,12 @@ function waitForVRReady(frame, timeoutMs = 180000) {
     });
 }
 
-function startPrepare(splatUrl, container = null) {
+function startPrepare(splatUrl, { visibleDuringLoad = false } = {}) {
     currentUrl = splatUrl;
     ready = false;
     loading = true;
 
-    const frame = ensureIframe(container);
-    if (embedMode) {
-        frame.style.display = 'block';
-    }
+    const frame = ensureIframe({ visible: visibleDuringLoad });
     frame.src = buildViewerUrl(splatUrl);
 
     preparePromise = waitForVRReady(frame)
@@ -179,29 +148,13 @@ function startPrepare(splatUrl, container = null) {
 }
 
 /**
- * Mount PlayCanvas supersplat as the sole viewer inside a container (Quest path).
+ * Fullscreen headset launcher — load splat in a visible fullscreen iframe.
  */
-export async function mountSuperSplatViewer(container, splatUrl) {
-    if (!container || !splatUrl) return;
-
-    if (currentUrl === splatUrl && ready && mountContainer === container && iframe) {
-        return;
-    }
-
-    if (currentUrl !== splatUrl || mountContainer !== container) {
-        await teardownSuperSplatVR();
-    }
-
-    return startPrepare(splatUrl, container);
-}
-
-/**
- * Pre-load the PlayCanvas gsplat viewer in a hidden fullscreen iframe (desktop warm-up).
- */
-export async function prepareSuperSplatVR(splatUrl) {
+export async function launchHeadsetVR(splatUrl) {
     if (!splatUrl) return;
 
     if (currentUrl === splatUrl && ready) {
+        ensureIframe({ visible: true });
         return;
     }
 
@@ -213,37 +166,40 @@ export async function prepareSuperSplatVR(splatUrl) {
         await teardownSuperSplatVR();
     }
 
-    return startPrepare(splatUrl, null);
+    return startPrepare(splatUrl, { visibleDuringLoad: true });
 }
 
-/**
- * Fire-and-forget VR warm-up after the 2D splat is already on screen.
- * Skipped on Quest — use mountSuperSplatViewer instead.
- */
+/** Desktop-only background warm-up (hidden iframe). */
+export async function prepareSuperSplatVR(splatUrl) {
+    if (!splatUrl) return;
+
+    if (currentUrl === splatUrl && ready) return;
+    if (currentUrl === splatUrl && preparePromise) return preparePromise;
+
+    if (currentUrl !== splatUrl) {
+        await teardownSuperSplatVR();
+    }
+
+    return startPrepare(splatUrl, { visibleDuringLoad: false });
+}
+
 export function warmSuperSplatVR(splatUrl) {
     if (!splatUrl || prefersSequentialVRLoad()) return;
 
-    if (currentUrl === splatUrl && (ready || preparePromise)) {
-        return;
-    }
+    if (currentUrl === splatUrl && (ready || preparePromise)) return;
 
     prepareSuperSplatVR(splatUrl).catch((err) => {
         console.warn('[SuperSplat VR] background warm failed:', err);
     });
 }
 
-/**
- * Show the viewer and enter immersive VR. Call synchronously from a user click
- * (do not await other work before this runs).
- */
+/** Enter immersive VR — call synchronously from a user tap/click. */
 export function enterSuperSplatVR() {
     if (!iframe || !ready) {
         throw new Error('SuperSplat VR viewer is not ready');
     }
 
-    if (!embedMode) {
-        iframe.style.display = 'block';
-    }
+    iframe.style.display = 'block';
 
     const win = iframe.contentWindow;
     const enterBtn = win?.document.getElementById('enterVR');
@@ -266,10 +222,6 @@ export function isSuperSplatVRLoading() {
     return loading && !ready;
 }
 
-export function isSuperSplatEmbedded() {
-    return embedMode;
-}
-
 export function onSuperSplatVRReady(callback) {
     onReadyCallback = callback;
     if (ready) callback();
@@ -289,8 +241,6 @@ export async function teardownSuperSplatVR() {
     xrActive = false;
     currentUrl = null;
     preparePromise = null;
-    mountContainer = null;
-    embedMode = false;
 
     if (iframe) {
         iframe.remove();
